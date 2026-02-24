@@ -25,7 +25,7 @@ pub enum Error {
 
     ZeromqError(String),
 
-    CommonmarkError(String),
+    SharedmarkError(String),
 }
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
@@ -55,7 +55,7 @@ impl Display for Error {
 
                 Error::ZeromqError(e) => e.to_string(),
 
-                Error::CommonmarkError(e) => e.to_string(),
+                Error::SharedmarkError(e) => e.to_string(),
             }
         )
     }
@@ -85,7 +85,7 @@ impl Error {
 
             Error::ZeromqError(_) => "ZeromqError",
 
-            Error::CommonmarkError(_) => "CommonmarkError",
+            Error::SharedmarkError(_) => "SharedmarkError",
         }
         .to_string()
     }

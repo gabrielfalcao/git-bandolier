@@ -92,18 +92,12 @@ pub use ${to_name}::{
 
     sed -E "s,^(\s*)[/][/](\s*)((Command::)?${to_title}),\1\2\3,g" -i src/main.rs
 
-    if cargo run -- "${to_name}" --help; then
-        echo "SUCCESS"
-        break
-    else
-        echo "FAIL"
+    if ! cargo run -- "${to_name}" --help; then
+        echo -e  "\x1b[1;38;5;196mFAILED\x1b[0m"
         break
     fi
 
-    #     git add -f "${to_dir}"
-    #     git diff HEAD -- "${to_dir}"
-    #     continue
-    # fi
-    # break
-    # git commit "${to_dir}" -m "add boilerplate subcommand ${to_name}"
+    git add -f "${to_dir}"
+    git diff HEAD -- "${to_dir}"
+    git commit "${to_dir}" -m "add boilerplate subcommand ${to_name}"
 done

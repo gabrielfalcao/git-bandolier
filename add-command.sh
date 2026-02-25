@@ -93,10 +93,17 @@ pub use ${to_name}::{
     sed -E "s,^(\s*)[/][/](\s*)((Command::)?${to_title}),\1\2\3,g" -i src/main.rs
 
     if cargo run; then
-        git add -f "${to_dir}"
-        git diff HEAD -- "${to_dir}"
-        continue
+        echo "SUCCESS"
+        break
+    else
+        echo "FAIL"
+        break
     fi
-    break
+
+    #     git add -f "${to_dir}"
+    #     git diff HEAD -- "${to_dir}"
+    #     continue
+    # fi
+    # break
     # git commit "${to_dir}" -m "add boilerplate subcommand ${to_name}"
 done

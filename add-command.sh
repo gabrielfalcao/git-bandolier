@@ -90,7 +90,7 @@ pub use ${to_name}::{
 
 " >> ./src/cli/commands/mod.rs
 
-    sed -E "s,^(\s*)[/][/](\s*)${to_title},\1\2${to_title},g" -i src/main.rs
+    sed -E "s,^(\s*)[/][/](\s*)((Command::)?${to_title}),\1\2${to_title},g" -i src/main.rs
 
     if cargo run; then
         git add -f "${to_dir}"

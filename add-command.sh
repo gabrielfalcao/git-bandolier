@@ -74,6 +74,7 @@ for to_name in ${commands[@]}; do
         sed -E "s/\b${from_name}\b/${to_name}/g" -i "${rsfile}"
         sed -E "s/\b${from_title}\b/${to_title}/g" -i "${rsfile}"
     done
+    cargo check
 
     echo "
 pub use commands::${to_name}::{
@@ -94,6 +95,7 @@ pub use ${to_name}::{
 " >> ./src/cli/commands/mod.rs
 
     sed -E "s,^(\s*)[/][/](\s*)((Command::)?\b${to_title}\b),\1\2\3,g" -i src/main.rs
+
 
     if ! cargo run -- "${to_name}" --help; then
         echo -e  "\x1b[1;38;5;196mFAILED\x1b[0m"

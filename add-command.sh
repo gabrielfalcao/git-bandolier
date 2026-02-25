@@ -98,6 +98,5 @@ pub use ${to_name}::{
     fi
 
     git add -f "${to_dir}"
-    git diff HEAD -- "${to_dir}"
     git commit "${to_dir}" -m "add boilerplate subcommand ${to_name}"
 done

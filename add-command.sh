@@ -71,9 +71,28 @@ for to_name in ${commands[@]}; do
         sed -E "s/${from_name}/${to_name}/g" -i "${rsfile}"
         sed -E "s/${from_title}/${to_title}/g" -i "${rsfile}"
     done
-    rust-autocomplete list "${to_dir}"
-    git add -f "${to_dir}"
-    git diff HEAD -- "${to_dir}"
+
+    echo "
+pub mod commands;
+pub use commands::${to_name}::{
+    ${to_name}Command, ${to_name}SharedOpt, ${to_name}DirOpt, ${to_name}FileOpt,
+    ${to_name}Opt,
+};
+
+" >> ./src/cli/mod.rs
+
+    echo "
+
+pub mod ${to_name};
+pub use ${to_name}::{
+    ${to_title}Command, ${to_title}SharedOpt, ${to_title}DirOpt, ${to_title}FileOpt,
+    ${to_title}Opt,
+};
+
+" >> ./src/cli/commands/mod.rs
+
+    # git add -f "${to_dir}"
+    # git diff HEAD -- "${to_dir}"
 
     break
     # git commit "${to_dir}" -m "add boilerplate subcommand ${to_name}"

@@ -92,7 +92,7 @@ pub use ${to_name}::{
 
     sed -E "s,^(\s*)[/][/](\s*)((Command::)?${to_title}),\1\2\3,g" -i src/main.rs
 
-    if cargo run -- "${to_name}"; then
+    if cargo run -- "${to_name}" --help; then
         echo "SUCCESS"
         break
     else

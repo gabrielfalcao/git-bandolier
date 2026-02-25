@@ -73,10 +73,9 @@ for to_name in ${commands[@]}; do
     done
 
     echo "
-pub mod commands;
 pub use commands::${to_name}::{
-    ${to_name}Command, ${to_name}SharedOpt, ${to_name}DirOpt, ${to_name}FileOpt,
-    ${to_name}Opt,
+    ${to_title}Command, ${to_title}SharedOpt, ${to_title}DirOpt, ${to_title}FileOpt,
+    ${to_title}Opt,
 };
 
 " >> ./src/cli/mod.rs
@@ -92,9 +91,12 @@ pub use ${to_name}::{
 " >> ./src/cli/commands/mod.rs
 
     sed -E "s,^(\s*)[/][/](\s*)${to_title},\1\2${to_title},g" -i src/main.rs
-    # git add -f "${to_dir}"
-    # git diff HEAD -- "${to_dir}"
 
+    if cargo run; then
+        git add -f "${to_dir}"
+        git diff HEAD -- "${to_dir}"
+        continue
+    fi
     break
     # git commit "${to_dir}" -m "add boilerplate subcommand ${to_name}"
 done

@@ -48,3 +48,13 @@ pub use workbench_category_names_length::{workbench_category_names_length};
 
 //workbench_category_names_length
 
+
+
+//workbench_category_names_list
+
+
+pub(crate) mod workbench_category_names_list;
+pub use workbench_category_names_list::{workbench_category_names_list};
+
+//workbench_category_names_list
+

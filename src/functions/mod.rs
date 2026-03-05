@@ -128,3 +128,13 @@ pub use workbench_engine_check_validate_categories::{workbench_engine_check_vali
 
 //workbench_engine_check_validate_categories
 
+
+
+//workbench_get_logfile_prefix_for_function
+
+
+pub(crate) mod workbench_get_logfile_prefix_for_function;
+pub use workbench_get_logfile_prefix_for_function::{workbench_get_logfile_prefix_for_function};
+
+//workbench_get_logfile_prefix_for_function
+

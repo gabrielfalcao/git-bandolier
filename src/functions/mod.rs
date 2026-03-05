@@ -278,3 +278,13 @@ pub use workbench_set_screenshot_location::{workbench_set_screenshot_location};
 
 //workbench_set_screenshot_location
 
+
+
+//workbench_setup_git
+
+
+pub(crate) mod workbench_setup_git;
+pub use workbench_setup_git::{workbench_setup_git};
+
+//workbench_setup_git
+

@@ -28,3 +28,13 @@ pub use workbench_add_arg_to_action_mapping::{workbench_add_arg_to_action_mappin
 
 //workbench_add_arg_to_action_mapping
 
+
+
+//workbench_add_finder_favorite
+
+
+pub(crate) mod workbench_add_finder_favorite;
+pub use workbench_add_finder_favorite::{workbench_add_finder_favorite};
+
+//workbench_add_finder_favorite
+

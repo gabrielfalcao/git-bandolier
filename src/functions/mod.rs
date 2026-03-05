@@ -38,3 +38,13 @@ pub use workbench_add_finder_favorite::{workbench_add_finder_favorite};
 
 //workbench_add_finder_favorite
 
+
+
+//workbench_category_names_length
+
+
+pub(crate) mod workbench_category_names_length;
+pub use workbench_category_names_length::{workbench_category_names_length};
+
+//workbench_category_names_length
+

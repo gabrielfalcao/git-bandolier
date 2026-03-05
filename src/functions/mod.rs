@@ -268,3 +268,13 @@ pub use workbench_refresh::{workbench_refresh};
 
 //workbench_refresh
 
+
+
+//workbench_set_screenshot_location
+
+
+pub(crate) mod workbench_set_screenshot_location;
+pub use workbench_set_screenshot_location::{workbench_set_screenshot_location};
+
+//workbench_set_screenshot_location
+

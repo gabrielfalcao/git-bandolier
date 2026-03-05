@@ -58,3 +58,13 @@ pub use workbench_category_names_list::{workbench_category_names_list};
 
 //workbench_category_names_list
 
+
+
+//workbench_category_setup
+
+
+pub(crate) mod workbench_category_setup;
+pub use workbench_category_setup::{workbench_category_setup};
+
+//workbench_category_setup
+

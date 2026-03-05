@@ -68,3 +68,13 @@ pub use workbench_category_setup::{workbench_category_setup};
 
 //workbench_category_setup
 
+
+
+//workbench_category_upsert_paths_by_name
+
+
+pub(crate) mod workbench_category_upsert_paths_by_name;
+pub use workbench_category_upsert_paths_by_name::{workbench_category_upsert_paths_by_name};
+
+//workbench_category_upsert_paths_by_name
+

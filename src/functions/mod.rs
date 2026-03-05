@@ -148,3 +148,13 @@ pub use workbench_goto::{workbench_goto};
 
 //workbench_goto
 
+
+
+//workbench_help
+
+
+pub(crate) mod workbench_help;
+pub use workbench_help::{workbench_help};
+
+//workbench_help
+

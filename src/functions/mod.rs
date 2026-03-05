@@ -288,3 +288,13 @@ pub use workbench_setup_git::{workbench_setup_git};
 
 //workbench_setup_git
 
+
+
+//workbench_vars
+
+
+pub(crate) mod workbench_vars;
+pub use workbench_vars::{workbench_vars};
+
+//workbench_vars
+

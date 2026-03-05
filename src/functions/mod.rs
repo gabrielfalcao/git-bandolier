@@ -218,3 +218,13 @@ pub use workbench_mktemp::{workbench_mktemp};
 
 //workbench_mktemp
 
+
+
+//workbench_move_each_path_to_workbench
+
+
+pub(crate) mod workbench_move_each_path_to_workbench;
+pub use workbench_move_each_path_to_workbench::{workbench_move_each_path_to_workbench};
+
+//workbench_move_each_path_to_workbench
+

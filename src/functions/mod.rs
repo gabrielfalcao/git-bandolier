@@ -138,3 +138,13 @@ pub use workbench_get_logfile_prefix_for_function::{workbench_get_logfile_prefix
 
 //workbench_get_logfile_prefix_for_function
 
+
+
+//workbench_goto
+
+
+pub(crate) mod workbench_goto;
+pub use workbench_goto::{workbench_goto};
+
+//workbench_goto
+

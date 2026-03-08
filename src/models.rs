@@ -1,13 +1,13 @@
-use chrono::{DateTime, Local, UTC};
+use chrono::{DateTime, Local, Utc};
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Context {
-    created: DateTime<UTC>,
+    created: DateTime<Utc>,
 }
 
 impl Context {
-    pub fn day<T: Into<DateTime<UTC>>>(created: T) -> Context {
+    pub fn day<T: Into<DateTime<Utc>>>(created: T) -> Context {
         Context {
             created: created.into(),
         }

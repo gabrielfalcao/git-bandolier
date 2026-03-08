@@ -1,257 +1,127 @@
 pub mod bootstrap;
 pub use bootstrap::{
-    BootstrapCommand, BootstrapSharedOpt, BootstrapDirOpt, BootstrapFileOpt,
-    BootstrapOpt,
+    BootstrapCommand, BootstrapDirOpt, BootstrapFileOpt, BootstrapOpt,
+    BootstrapSharedOpt,
 };
 
+pub mod task;
+pub use task::{TaskCommand, TaskDirOpt, TaskFileOpt, TaskOpt, TaskSharedOpt};
+
+pub mod enqueue;
+pub use enqueue::{
+    EnqueueCommand, EnqueueDirOpt, EnqueueFileOpt, EnqueueOpt, EnqueueSharedOpt,
+};
 
 pub mod env;
-pub use env::{
-    EnvCommand, EnvSharedOpt, EnvDirOpt, EnvFileOpt,
-    EnvOpt,
-};
-
-
-
+pub use env::{EnvCommand, EnvDirOpt, EnvFileOpt, EnvOpt, EnvSharedOpt};
 
 pub mod context;
 pub use context::{
-    ContextCommand, ContextSharedOpt, ContextDirOpt, ContextFileOpt,
-    ContextOpt,
+    ContextCommand, ContextDirOpt, ContextFileOpt, ContextOpt, ContextSharedOpt,
 };
-
-
-
 
 pub mod switch;
 pub use switch::{
-    SwitchCommand, SwitchSharedOpt, SwitchDirOpt, SwitchFileOpt,
-    SwitchOpt,
+    SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
 };
-
-
-
 
 pub mod path;
-pub use path::{
-    PathCommand, PathSharedOpt, PathDirOpt, PathFileOpt,
-    PathOpt,
-};
-
-
-
+pub use path::{PathCommand, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt};
 
 pub mod goto;
-pub use goto::{
-    GotoCommand, GotoSharedOpt, GotoDirOpt, GotoFileOpt,
-    GotoOpt,
-};
-
-
-
+pub use goto::{GotoCommand, GotoDirOpt, GotoFileOpt, GotoOpt, GotoSharedOpt};
 
 pub mod list;
-pub use list::{
-    ListCommand, ListSharedOpt, ListDirOpt, ListFileOpt,
-    ListOpt,
-};
-
-
-
+pub use list::{ListCommand, ListDirOpt, ListFileOpt, ListOpt, ListSharedOpt};
 
 pub mod init;
-pub use init::{
-    InitCommand, InitSharedOpt, InitDirOpt, InitFileOpt,
-    InitOpt,
-};
-
-
-
+pub use init::{InitCommand, InitDirOpt, InitFileOpt, InitOpt, InitSharedOpt};
 
 pub mod doctor;
 pub use doctor::{
-    DoctorCommand, DoctorSharedOpt, DoctorDirOpt, DoctorFileOpt,
-    DoctorOpt,
+    DoctorCommand, DoctorDirOpt, DoctorFileOpt, DoctorOpt, DoctorSharedOpt,
 };
-
-
-
 
 pub mod find;
-pub use find::{
-    FindCommand, FindSharedOpt, FindDirOpt, FindFileOpt,
-    FindOpt,
-};
-
-
-
+pub use find::{FindCommand, FindDirOpt, FindFileOpt, FindOpt, FindSharedOpt};
 
 pub mod show;
-pub use show::{
-    ShowCommand, ShowSharedOpt, ShowDirOpt, ShowFileOpt,
-    ShowOpt,
-};
-
-
-
+pub use show::{ShowCommand, ShowDirOpt, ShowFileOpt, ShowOpt, ShowSharedOpt};
 
 pub mod today;
 pub use today::{
-    TodayCommand, TodaySharedOpt, TodayDirOpt, TodayFileOpt,
-    TodayOpt,
+    TodayCommand, TodayDirOpt, TodayFileOpt, TodayOpt, TodaySharedOpt,
 };
-
-
-
 
 pub mod update;
 pub use update::{
-    UpdateCommand, UpdateSharedOpt, UpdateDirOpt, UpdateFileOpt,
-    UpdateOpt,
+    UpdateCommand, UpdateDirOpt, UpdateFileOpt, UpdateOpt, UpdateSharedOpt,
 };
-
-
-
 
 pub mod delete;
 pub use delete::{
-    DeleteCommand, DeleteSharedOpt, DeleteDirOpt, DeleteFileOpt,
-    DeleteOpt,
+    DeleteCommand, DeleteDirOpt, DeleteFileOpt, DeleteOpt, DeleteSharedOpt,
 };
-
-
-
 
 pub mod edit;
-pub use edit::{
-    EditCommand, EditSharedOpt, EditDirOpt, EditFileOpt,
-    EditOpt,
-};
-
-
-
+pub use edit::{EditCommand, EditDirOpt, EditFileOpt, EditOpt, EditSharedOpt};
 
 pub mod server;
 pub use server::{
-    ServerCommand, ServerSharedOpt, ServerDirOpt, ServerFileOpt,
-    ServerOpt,
+    ServerCommand, ServerDirOpt, ServerFileOpt, ServerOpt, ServerSharedOpt,
 };
-
-
-
 
 pub mod client;
 pub use client::{
-    ClientCommand, ClientSharedOpt, ClientDirOpt, ClientFileOpt,
-    ClientOpt,
+    ClientCommand, ClientDirOpt, ClientFileOpt, ClientOpt, ClientSharedOpt,
 };
-
-
-
 
 pub mod refresh;
 pub use refresh::{
-    RefreshCommand, RefreshSharedOpt, RefreshDirOpt, RefreshFileOpt,
-    RefreshOpt,
+    RefreshCommand, RefreshDirOpt, RefreshFileOpt, RefreshOpt, RefreshSharedOpt,
 };
-
-
-
 
 pub mod shell;
 pub use shell::{
-    ShellCommand, ShellSharedOpt, ShellDirOpt, ShellFileOpt,
-    ShellOpt,
+    ShellCommand, ShellDirOpt, ShellFileOpt, ShellOpt, ShellSharedOpt,
 };
-
-
-
 
 pub mod tool;
-pub use tool::{
-    ToolCommand, ToolSharedOpt, ToolDirOpt, ToolFileOpt,
-    ToolOpt,
-};
-
-
-
+pub use tool::{ToolCommand, ToolDirOpt, ToolFileOpt, ToolOpt, ToolSharedOpt};
 
 pub mod parse;
 pub use parse::{
-    ParseCommand, ParseSharedOpt, ParseDirOpt, ParseFileOpt,
-    ParseOpt,
+    ParseCommand, ParseDirOpt, ParseFileOpt, ParseOpt, ParseSharedOpt,
 };
-
-
-
 
 pub mod export;
 pub use export::{
-    ExportCommand, ExportSharedOpt, ExportDirOpt, ExportFileOpt,
-    ExportOpt,
+    ExportCommand, ExportDirOpt, ExportFileOpt, ExportOpt, ExportSharedOpt,
 };
-
-
-
 
 pub mod import;
 pub use import::{
-    ImportCommand, ImportSharedOpt, ImportDirOpt, ImportFileOpt,
-    ImportOpt,
+    ImportCommand, ImportDirOpt, ImportFileOpt, ImportOpt, ImportSharedOpt,
 };
-
-
-
 
 pub mod web;
-pub use web::{
-    WebCommand, WebSharedOpt, WebDirOpt, WebFileOpt,
-    WebOpt,
-};
-
-
-
+pub use web::{WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt};
 
 pub mod stash;
 pub use stash::{
-    StashCommand, StashSharedOpt, StashDirOpt, StashFileOpt,
-    StashOpt,
+    StashCommand, StashDirOpt, StashFileOpt, StashOpt, StashSharedOpt,
 };
-
-
-
 
 pub mod save;
-pub use save::{
-    SaveCommand, SaveSharedOpt, SaveDirOpt, SaveFileOpt,
-    SaveOpt,
-};
-
-
-
+pub use save::{SaveCommand, SaveDirOpt, SaveFileOpt, SaveOpt, SaveSharedOpt};
 
 pub mod load;
-pub use load::{
-    LoadCommand, LoadSharedOpt, LoadDirOpt, LoadFileOpt,
-    LoadOpt,
-};
-
-
-
+pub use load::{LoadCommand, LoadDirOpt, LoadFileOpt, LoadOpt, LoadSharedOpt};
 
 pub mod write;
 pub use write::{
-    WriteCommand, WriteSharedOpt, WriteDirOpt, WriteFileOpt,
-    WriteOpt,
+    WriteCommand, WriteDirOpt, WriteFileOpt, WriteOpt, WriteSharedOpt,
 };
-
-
-
 
 pub mod read;
-pub use read::{
-    ReadCommand, ReadSharedOpt, ReadDirOpt, ReadFileOpt,
-    ReadOpt,
-};
-
-
+pub use read::{ReadCommand, ReadDirOpt, ReadFileOpt, ReadOpt, ReadSharedOpt};

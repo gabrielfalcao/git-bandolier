@@ -3,6 +3,14 @@ pub use commands::bootstrap::{
     BootstrapCommand, BootstrapSharedOpt, BootstrapDirOpt, BootstrapFileOpt,
     BootstrapOpt,
 };
+pub use commands::enqueue::{
+    EnqueueCommand, EnqueueSharedOpt, EnqueueDirOpt, EnqueueFileOpt,
+    EnqueueOpt,
+};
+pub use commands::task::{
+    TaskCommand, TaskSharedOpt, TaskDirOpt, TaskFileOpt,
+    TaskOpt,
+};
 
 pub use commands::env::{
     EnvCommand, EnvSharedOpt, EnvDirOpt, EnvFileOpt,
@@ -197,5 +205,3 @@ pub use commands::read::{
     ReadCommand, ReadSharedOpt, ReadDirOpt, ReadFileOpt,
     ReadOpt,
 };
-
-

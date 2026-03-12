@@ -12,6 +12,7 @@ declare -a commands=(
     "now"
     "what"
     "wat"
+    "git"
 )
 
 declare -- name=""

@@ -84,7 +84,9 @@ pub use ${to_name}::{
 #     ServerOpt, ShellOpt, ShowOpt, StashOpt, SwitchOpt, TaskOpt, TodayOpt,
 #     ToolOpt, UpdateOpt, WebOpt, WriteOpt,
 # };
-
+    #
+    # stable \(?:sed\(?:\s-*\(.*\)\s-*\)\)\(["']\)\(.*g\)\(\2\) → \,(regex!)
+    #
     sed -E "s,^(\s*)[/][/](\s*)((Command::)?${to_title}),\1\2\3,g" -i src/main.rs
     cargo check
 

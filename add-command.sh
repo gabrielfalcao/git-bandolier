@@ -52,6 +52,10 @@ for to_name in ${commands[@]}; do
     done
     cargo check
 
+    # (replace-regexp
+    #        regexp:   \(?:sed\(?:\s-*\(.*\)\s-*\)\)\(["']\)\(.*g\)\(\2\)
+    #     to-string:    \,(regex!)
+    #   )
     echo "
 pub use commands::${to_name}::{
     ${to_title}Command, ${to_title}SharedOpt, ${to_title}DirOpt, ${to_title}FileOpt,

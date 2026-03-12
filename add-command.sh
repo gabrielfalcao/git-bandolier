@@ -68,10 +68,23 @@ pub use ${to_name}::{
     ${to_title}Opt,
 };
 
+
 " >> ./src/cli/commands/mod.rs
+
+# use workbench::cli::commands::{
+#     BootstrapOpt, ClientOpt, ContextOpt, DeleteOpt, DoctorOpt, EditOpt,
+#     EnqueueOpt, EnvOpt, ExportOpt, FindOpt, GotoOpt, ImportOpt, InitOpt,
+#     ListOpt, LoadOpt, ParseOpt, PathOpt, ReadOpt, RefreshOpt, SaveOpt,
+#     ServerOpt, ShellOpt, ShowOpt, StashOpt, SwitchOpt, TaskOpt, TodayOpt,
+#     ToolOpt, UpdateOpt, WebOpt, WriteOpt,
+# };
 
     sed -E "s,^(\s*)[/][/](\s*)((Command::)?${to_title}),\1\2\3,g" -i src/main.rs
 
+    sed -E "s@${from_title}(${from_title}Opt),@${from_title}(${from_title}Opt),${from_title}(${from_titleOpt}),\n${to_title}(${to_titleOpt}),@g" -i src/main.rs
+
+    sed -E "s@(Command::${from_title}(op) => op.dispatch()?)@Command::${from_title}(op) => op.dispatch()?,\n    Command::${to_title}(op) => op.dispatch()?,\n@g" -i src/main.rs
+    sed -z -E 's@((use\s-+workbench::cli::commands::[{][[:space:]\n]+[^}]+Opt,)([[:space:]\n]*))[}][[:space:]\n]*,[[:space:]\n]*[;]@\1, ${to_title}Opt, \n[}];@g' -i src/main.rs
 
     if ! cargo run -- "${to_name}" --help; then
         echo -e  "\x1b[1;38;5;196mFAILED\x1b[0m"

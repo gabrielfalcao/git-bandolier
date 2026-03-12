@@ -30,7 +30,8 @@ impl Cli {
 
 impl ParserDispatcher<Error> for Cli {
     fn dispatch(&self) -> Result<()> {
-        self.command.dispatch()?;
+        let cmd = &self.command;
+        dbg!(&cmd);
 
         Ok(())
     }

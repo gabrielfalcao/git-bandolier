@@ -10,10 +10,10 @@
 >
 >  - `kind` is one of `repo`, `gist`, `wiki` etc
 >  - `vendor` is one of `github`, `gitea`, `gitlab`, `source_hut` etc
->  - `owner`  is the vendor username
->  - `repo_name`  is the vendor git repo name
+>  - `owner`  is the vendor's `username`
+>  - `repo_id`  is the git repo "name" as found in the git clone uri, e.g.: when `kind` is `gist` `repo_id` is the gist id, whereas for when `kind` is `repo` `repo_id` is the git repo name
+>  - `repo_name`  is the vendor's name or title for specific `kind`, such as the name/title of a gist or repo name when kind is `kind`
 >  - `vendor` is one of `github`, `gitea`, `gitlab`, `source_hut` etc
->
 
 #### Examples
 
@@ -40,6 +40,28 @@ git clone --depth=1 https://github.com/scrapy/parsel.git ~/workbench/$(today)/gi
 ```
 
 #### kind: gist
+
+
+```bash
+workbench git tryout https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797
+```
+
+renders the metadata:
+
+```yaml
+kind: gist
+vendor: github
+owner: fnky
+repo_name: parcel
+```
+
+and runs a command equivalent to, more or less:
+
+```bash
+mkdir -p ~/workbench/$(today)/git-tryouts/repo/github/scrapy
+git clone --depth=1 https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797.git ~/workbench/$(today)/git-tryouts/repo/github/scrapy/parcel.git
+```
+
 
 ```bash
 workbench git tryout https://gist.github.com/458719343aabd01cfb17a3a4f7296797.git
@@ -78,17 +100,17 @@ git clone --depth=1 https://gist.github.com/458719343aabd01cfb17a3a4f7296797.git
 #### via osascript
 
 
-To add a folder to the macOS Finder sidebar via command-line, use  to instruct Finder to add a specific path. The most reliable method is executing this in terminal: [1, 2, 3, 4]  
-Key Command-Line Methods: 
+To add a folder to the macOS Finder sidebar via command-line, use  to instruct Finder to add a specific path. The most reliable method is executing this in terminal: [1, 2, 3, 4]
+Key Command-Line Methods:
 
-• AppleScript (Recommended): . 
-• Keyboard Shortcut (Terminal simulation): You can use  to trigger the  shortcut. [1, 3, 4]  
+• AppleScript (Recommended): .
+• Keyboard Shortcut (Terminal simulation): You can use  to trigger the  shortcut. [1, 3, 4]
 
-Important Notes: 
+Important Notes:
 
-• Ensure the path is an absolute path (e.g.). 
-• These methods add the item to the "Favorites" section. 
-• You may need to restart Finder for changes to take effect immediately: . [1, 4, 5, 6, 7]  
+• Ensure the path is an absolute path (e.g.).
+• These methods add the item to the "Favorites" section.
+• You may need to restart Finder for changes to take effect immediately: . [1, 4, 5, 6, 7]
 
 AI responses may include mistakes.
 
@@ -106,15 +128,15 @@ AI responses may include mistakes.
 
 sfltool add-item com.apple.LSSharedFileList.FavoriteItems file:///path/to/folder
 
-You can add items to the macOS Finder sidebar via command-line using the  (Shared File List tool) to manage . [1]  
-Use the following command in Terminal, replacing  with your target: 
-Note: You may need to relaunch Finder for changes to appear (). [1, 2, 3]  
-Key Details: 
+You can add items to the macOS Finder sidebar via command-line using the  (Shared File List tool) to manage . [1]
+Use the following command in Terminal, replacing  with your target:
+Note: You may need to relaunch Finder for changes to appear (). [1, 2, 3]
+Key Details:
 
-• Target:  controls the "Favorites" section. 
-• Utility:  works on modern macOS versions. 
-• Requirement: The path must be a valid file URL (e.g.). 
-• Alternative: You cannot directly use  for sidebar modifications. [1, 4, 5]  
+• Target:  controls the "Favorites" section.
+• Utility:  works on modern macOS versions.
+• Requirement: The path must be a valid file URL (e.g.).
+• Alternative: You cannot directly use  for sidebar modifications. [1, 4, 5]
 
 AI responses may include mistakes.
 
@@ -123,5 +145,3 @@ AI responses may include mistakes.
 [3] https://www.avast.com/c-mac-show-hidden-files
 [4] https://apple.stackexchange.com/questions/392088/add-finder-sidebar-section-via-terminal
 [5] https://www.reddit.com/r/macsysadmin/comments/5tun12/setting_finder_preferences_sidebar_and_dock_items/
-
-

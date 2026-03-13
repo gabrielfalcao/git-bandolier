@@ -30,6 +30,7 @@ kind:   repo
 vendor: github
 owner: scrapy
 repo_name: parcel
+repo_id: parcel
 ```
 
 and runs a command equivalent to, more or less:
@@ -52,23 +53,15 @@ renders the metadata:
 kind: gist
 vendor: github
 owner: fnky
-repo_name: parcel
+repo_name: ANSI.md
+repo_id: 458719343aabd01cfb17a3a4f7296797
 ```
 
 and runs a command equivalent to, more or less:
 
 ```bash
-mkdir -p ~/workbench/$(today)/git-tryouts/repo/github/scrapy
-git clone --depth=1 https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797.git ~/workbench/$(today)/git-tryouts/repo/github/scrapy/parcel.git
-```
-
-
-```bash
-workbench git tryout https://gist.github.com/458719343aabd01cfb17a3a4f7296797.git
-
-# simply runs:
-
-git clone --depth=1 https://gist.github.com/458719343aabd01cfb17a3a4f7296797.git ~/workbench/$(today)/git-tryouts/github/gist/fnky__ANSI.md
+mkdir -p ~/workbench/$(today)/git-tryouts/gist/github/fnky
+git clone --depth=1 https://gist.github.com/fnky/458719343aabd01cfb17a3a4f7296797.git ~/workbench/$(today)/git-tryouts/gist/github/fnky/ANSI.md/
 ```
 
 

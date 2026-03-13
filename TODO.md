@@ -1,5 +1,55 @@
 # TODO workbench
 
+## TODO 2026-03-12
+
+### subcommand `git`
+
+
+> runs git clone --depth=1 inside `${workbench_path}/git-tryouts/<kind>/<vendor>/<owner>/<repo_name>`
+> where:
+>
+>  - `kind` is one of `repo`, `gist`, `wiki` etc
+>  - `vendor` is one of `github`, `gitea`, `gitlab`, `source_hut` etc
+>  - `owner`  is the vendor username
+>  - `repo_name`  is the vendor git repo name
+>  - `vendor` is one of `github`, `gitea`, `gitlab`, `source_hut` etc
+>
+
+#### Examples
+
+##### kind: repo
+
+```bash
+workbench git tryout https://github.com/scrapy/parsel
+```
+
+renders the metadata:
+
+```yaml
+kind:   repo
+vendor: github
+owner: scrapy
+repo_name: parcel
+```
+
+and runs a command equivalent to, more or less:
+
+```bash
+mkdir -p ~/workbench/$(today)/git-tryouts/repo/github/scrapy
+git clone --depth=1 https://github.com/scrapy/parsel.git ~/workbench/$(today)/git-tryouts/repo/github/scrapy/parcel.git
+```
+
+#### kind: gist
+
+```bash
+workbench git tryout https://gist.github.com/458719343aabd01cfb17a3a4f7296797.git
+
+# simply runs:
+
+git clone --depth=1 https://gist.github.com/458719343aabd01cfb17a3a4f7296797.git ~/workbench/$(today)/git-tryouts/github/gist/fnky__ANSI.md
+```
+
+
 ## TODO 2026-02-22
 
 - create workbench in any given folder (alert if folder is not valid date `YYYY-MM-DD`)

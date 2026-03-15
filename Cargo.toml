@@ -41,6 +41,7 @@ test = false
 block2 = "0.6.2"
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.5.57", features = ["derive", "env", "string", "unicode", "wrap_help"] }
+emacs = { version = "0.20.0", features = ["bindgen", "debug", "utf-8-validation", "nonzero-integer-conversion"] }
 # commonmark = "0.1.0"
 git2 = "0.20.4"
 # hyper = "1.8.1"

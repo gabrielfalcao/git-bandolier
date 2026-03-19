@@ -9,7 +9,7 @@ export IFS=$'\n'
 declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
 declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare -- this_script_path="${script_path}/${script_name}"
-
+declare -- stderr="$(mktemp)"
 declare -a from_commands=(
     "absorb"
     "add"
@@ -97,6 +97,8 @@ declare -a to_commands=(
 )
 
 on_exit() {
+    bash -c "rm -f ${stderr@Q} &
+disown -a"
     set +x
 }
 on_ctrlc() {

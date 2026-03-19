@@ -150,7 +150,6 @@ fi
 main() {
     echo -e "from_commands: ${#from_commands[@]}"
     echo -e "to_commands: ${#to_commands[@]}"
-
 }
 if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
     main

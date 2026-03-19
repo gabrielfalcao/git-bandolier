@@ -53,14 +53,13 @@ declare -a to_commands=(
     "br"
     "remotes"
     "ignore"
-
+)
+declare -a to_existing_commands=(
     "actual-file-dates-commit"
     "add-and-commit-unfolded"
     "arcane-magic"
     "autocommit-plumbing"
     "autocommit-untracked-unstaged"
-    "autocommit-untracked-unstaged.el"
-    "br"
     "branch-format-the-struggle-aint-virtual"
     "commit"
     "commit-unstaged-and-untracked"
@@ -69,9 +68,7 @@ declare -a to_commands=(
     "dir"
     "filenames-diff-list"
     "files-changed-since"
-    "files-changed-since.emacs-auto-save-2025-10-13-190841-UTC+0000"
     "g"
-    "ignore"
     "import-new-files-from-remote-reference"
     "info"
     "linux-remote"
@@ -84,16 +81,11 @@ declare -a to_commands=(
     "q"
     "q-broken-i-e-wip"
     "qc"
-    "remotes"
-    "remotes.el"
     "show-config"
-    "st"
     "status"
     "status-porcelain.gawk"
-    "status-porcelain.gawk.el"
     "status-print-path-if"
     "untracked"
-
 )
 
 on_exit() {
@@ -152,6 +144,7 @@ fi
 main() {
     echo -e "from_commands: ${#from_commands[@]}"
     echo -e "to_commands: ${#to_commands[@]}"
+    echo -e "to_existing_commands: ${#to_existing_commands[@]}"
 }
 if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
     main

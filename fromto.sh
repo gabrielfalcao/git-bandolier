@@ -52,6 +52,9 @@ declare -a git_bandolier_commands=(
     "json"
     "br"
     "remotes"
+    "ignore"
+
+
 
 
 

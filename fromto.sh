@@ -47,16 +47,52 @@ declare -a from_commands=(
     "web"
     "write"
 )
-declare -a git_bandolier_commands=(
+declare -a to_commands=(
     "st"
     "json"
     "br"
     "remotes"
     "ignore"
 
-
-
-
+    "actual-file-dates-commit"
+    "add-and-commit-unfolded"
+    "arcane-magic"
+    "autocommit-plumbing"
+    "autocommit-untracked-unstaged"
+    "autocommit-untracked-unstaged.el"
+    "br"
+    "branch-format-the-struggle-aint-virtual"
+    "commit"
+    "commit-unstaged-and-untracked"
+    "common-ancestor-to-ref"
+    "diff-head"
+    "dir"
+    "filenames-diff-list"
+    "files-changed-since"
+    "files-changed-since.emacs-auto-save-2025-10-13-190841-UTC+0000"
+    "g"
+    "ignore"
+    "import-new-files-from-remote-reference"
+    "info"
+    "linux-remote"
+    "list-branches"
+    "log-shash-date-subject"
+    "modified"
+    "offline"
+    "onesum"
+    "path"
+    "q"
+    "q-broken-i-e-wip"
+    "qc"
+    "remotes"
+    "remotes.el"
+    "show-config"
+    "st"
+    "status"
+    "status-porcelain.gawk"
+    "status-porcelain.gawk.el"
+    "status-print-path-if"
+    "untracked"
 
 )
 
@@ -110,32 +146,12 @@ if ! git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
     code=$?
 fi
 # </GIT>
-export IFS=$'\n'
 
 main() {
-
-    if [ ${argc} -eq 0 ]; then
-        1>&2 echo -e "[$(basename "${BASH_SOURCE[0]}") error]" "missing arguments"
-        exit 1
-    fi
-
-    for index in ${!argv[@]}; do
-        current=$(($index + 1))
-        arg="${argv[$index]}"
-        pos="$(printf '%*s of %s' ${#argc} ${current} ${argc})"
-
-        case "${arg}" in
-            -h | --help)
-                1>&2 echo -e "HELP"
-                ;;
-            *)
-                1>&2 echo -e "[$(basename "${BASH_SOURCE[0]}") argument ${pos}]" "${arg@Q}"
-                ;;
-        esac
-    done
+    echo -e "from_commands: ${#from_commands[@]}"
+    echo -e "to_commands: ${#to_commands[@]}"
 
 }
-
 if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
     main
 else

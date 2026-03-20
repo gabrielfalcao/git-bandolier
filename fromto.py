@@ -4,7 +4,7 @@ import sys
 import json
 import io
 import click
-
+from itertools import chain
 
 def unique_list(items):
     return list(dict([(m, hash(m)) for m in items]).keys())

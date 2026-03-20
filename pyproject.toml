@@ -1,0 +1,16 @@
+[project]
+name = "git-bandolier"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "click>=8.3.1",
+    "uiclasses>=3.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "sure>=2.0.1",
+]

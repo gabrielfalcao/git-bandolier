@@ -1,29 +1,27 @@
 #!/usr/bin/env python3
 
-import sys
-import click
-import re
-import shutil
-import os
+import dataclasses
 import json
 import math
+import os
+import re
+import shutil
 import subprocess
+import sys
 import urllib
 import urllib.parse
-import dataclasses
-
-from pprint import pformat
-from decimal import Decimal
-from datetime import datetime, timedelta, UTC
-from dataclasses import dataclass, field
-from typing import List, Dict, Tuple, Union, Optional, Self
-from pathlib import Path
-from subprocess import Popen
-import json
-from pprint import pformat, pprint
-from pathlib import Path
-from itertools import chain
 from collections import OrderedDict
+from dataclasses import dataclass, field
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from itertools import chain
+from pathlib import Path
+from pprint import pformat, pprint
+from subprocess import Popen
+from typing import Dict, List, Optional, Self, Tuple, Union
+
+import click
+
 
 def unique_list(items):
     return list(OrderedDict([(m, hash(m)) for m in items]).keys())

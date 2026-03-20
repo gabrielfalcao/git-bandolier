@@ -5,11 +5,19 @@ set +f
 set -o pipefail
 unset IFS
 export IFS=$'\n'
+### 0=`declare -a to_existing_commands`
+### 1=`declare -a to_existing_commands`
+### 2=`to_existing_commands`
+### 3=`to_existing`
+### 4=`_existing`
+### 5=`_commands`
+
 
 declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
 declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 declare -- this_script_path="${script_path}/${script_name}"
 declare -- stderr="$(mktemp)"
+# ZGVjbGFyZSAtQSBmcm9tX3RvX2NvbW1hbmRzX21hcD0oKQ==
 declare -a from_commands=(
     "absorb"
     "add"
@@ -47,45 +55,45 @@ declare -a from_commands=(
     "web"
     "write"
 )
-declare -a to_commands=(
+declare -a to_first_commands=(
     "st"
     "json"
     "br"
     "remotes"
     "ignore"
 )
+
 declare -a to_existing_commands=(
-    "actual-file-dates-commit"
-    "add-and-commit-unfolded"
-    "arcane-magic"
-    "autocommit-plumbing"
-    "autocommit-untracked-unstaged"
-    "branch-format-the-struggle-aint-virtual"
+    "actual_file_dates_commit"
+    "add_and_commit_unfolded"
+    "arcane_magic"
+    "autocommit_plumbing"
+    "autocommit_untracked_unstaged"
+    "branch_format_the_struggle_aint_virtual"
     "commit"
-    "commit-unstaged-and-untracked"
-    "common-ancestor-to-ref"
-    "diff-head"
-    "dir"
-    "filenames-diff-list"
-    "files-changed-since"
-    "g"
-    "import-new-files-from-remote-reference"
+    "commit_unstaged_and_untracked"
+    "common_ancestor_to_ref"
+    "filenames_diff_list"
+    "files_changed_since"
+    "init_g"
+    "quickcommit"
+    "import_new_files_from_remote_reference"
     "info"
-    "linux-remote"
-    "list-branches"
-    "log-shash-date-subject"
-    "modified"
+    "linux_remote"
+    "list_branches"
+    "log_shash_date_subject"
     "offline"
     "onesum"
     "path"
-    "q"
-    "q-broken-i-e-wip"
-    "qc"
-    "show-config"
-    "status"
-    "status-porcelain.gawk"
-    "status-print-path-if"
+    "q_broken_i_e_wip"
+    "show_config"
+    "status_porcelain_gawk"
+    "status_print_path_if"
     "untracked"
+)
+declare -a to_commands=(
+    ${to_first_commands[@]}
+    ${to_existing_commands[@]}
 )
 
 on_exit() {
@@ -136,15 +144,54 @@ declare -- value=""
 
 # <GIT>
 declare -- git_repo_path=""
-if ! git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
+if git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
+    code=0
+else
     code=$?
 fi
 # </GIT>
 
+
 main() {
-    echo -e "from_commands: ${#from_commands[@]}"
-    echo -e "to_commands: ${#to_commands[@]}"
-    echo -e "to_existing_commands: ${#to_existing_commands[@]}"
+# declare -A from_to_first_commands_map=()
+
+    1>&2 echo -en "\x1b[2J\x1b[3J\x1b[H"
+    echo -e "${#from_commands[@]} from_commands: ${from_commands[@]@Q}\n"
+    echo -e "${#to_first_commands[@]} to_first_commands: ${to_first_commands[@]@Q}\n"
+    echo -e "${#to_existing_commands[@]} to_existing_commands: ${to_existing_commands[@]@Q}\n"
+    echo -e "${#to_commands[@]} to_commands: ${to_commands[@]@Q}\n"
+    exit
+# 0=`local -- pos=`
+# 1=`--`
+# 2=`-`
+# 3=`pos`
+
+
+    local -- from_cmd="";
+    local -- from_name="";
+    local -- from_path="";
+    local -i from_index=0
+    local -i from_current=0
+    local -- from_arg=""
+    local -- from_pos=""
+
+    local -- to_cmd="";
+    local -- to_name="";
+    local -- to_path="";
+    local -i to_index=0
+    local -i to_current=0
+    local -- to_arg=""
+    local -- to_pos=""
+
+    for from_index in ${!from_commands[@]}; do
+        from_current=$(($from_index + 1))
+        from_arg="${argv[$from_index]}"
+        from_pos="$(printf '%*s of %s' ${#argc} ${from_current} ${argc})"
+
+    done
+
+
+
 }
 if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
     main

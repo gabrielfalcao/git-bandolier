@@ -12,10 +12,10 @@ export IFS=$'\n'
 ### 4=`_existing`
 ### 5=`_commands`
 
-declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
-declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-declare -- this_script_path="${script_path}/${script_name}"
-declare -- stderr="$(mktemp)"
+declare -g script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -g script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -g this_script_path="${script_path}/${script_name}"
+declare -g stderr="$(mktemp)"
 # ZGVjbGFyZSAtQSBmcm9tX3RvX2NvbW1hbmRzX21hcD0oKQ==
 declare -a from_commands=(
     "absorb"
@@ -127,32 +127,36 @@ declare -i argc=${#argv[@]}
 declare -i code=0
 
 declare -i current=0
-declare -- arg=""
-declare -- pos=""
+declare -g arg=""
+declare -g pos=""
 
 declare -i index=0
-declare -- arg=""
-declare -- param=""
+declare -g arg=""
+declare -g param=""
 
 declare -i next_index=0
-declare -- next_arg=""
-declare -- next_param=""
+declare -g next_arg=""
+declare -g next_param=""
 
 declare -i skip_next=0
 
 declare -i lineno=0
 declare -i line_number=0
-declare -- line=""
+declare -g line=""
 
-declare -- argument=""
-declare -- field=""
-declare -- key=""
-declare -- name=""
-declare -- path=""
-declare -- value=""
+declare -g argument=""
+declare -g field=""
+declare -g key=""
+declare -g name=""
+declare -g path=""
+declare -g value=""
+
+declare -g varname=""
+declare -g line=""
+declare -a varnames=()
 
 # <GIT>
-declare -- git_repo_path=""
+declare -g git_repo_path=""
 if git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
     code=0
 else
@@ -166,6 +170,29 @@ cls() {
     1>&2 echo -e '\n'
 
 }
+
+printvar_named() {
+    local -- varname="$1"
+    1>&2 declare -p "${varname}"
+    local -i code=0
+    # if [[ -v refvar ]]; then
+    #     unset -n refvar
+    # fi
+    if local -I -n refvar="${varname}"; then
+        code=0
+    else
+        code=$?
+    fi
+
+    if [ "${code}" -ne 0 ]; then
+        1>&2 echo -en "failed to print var ${varname@Q}"
+        return ${code}
+    fi
+    echo -en '\x1b[1;38;2;85;87;83m\x1b[1;48;2;138;226;52m'
+    echo -en "${varname}=${refvar@Q}"
+    echo -e '\x1b[0\n'
+
+}
 main() {
     # declare -A from_to_first_commands_map=()
 
@@ -177,9 +204,6 @@ main() {
 
     from_commands_count=${#from_commands[@]}
     to_commands_count=${#to_commands[@]}
-    local -- varname=""
-    local -- line=""
-    local -a varnames=()
     cls
     echo
     for from_commands_index in ${!from_commands[@]}; do
@@ -192,6 +216,7 @@ main() {
         from_command_value="${from_commands[${from_commands_index}]}"
         from_commands_pos="$(printf '%*s of %s' ${#from_commands_count} ${from_commands_current} ${from_commands_count})"
 
+    echo
         for to_commands_index in ${!to_commands[@]}; do
             to_commands_index=0
             to_commands_current=0
@@ -205,13 +230,7 @@ main() {
             varnames=($(echo "${!from_*} ${!to_*}"))
             1>&2 echo -en "varnames:\x1b[0m\n"
             for varname in ${varnames[@]}; do
-                if [[ -v refvar ]]; then
-                    unset -n refvar
-                fi
-                local -I -n refvar="${varname}"
-                1>&2 echo -en '\x1b[1;38;2;85;87;83m\x1b[1;48;2;138;226;52m'
-                1>&2 echo -en "${refvar[@]@Q}"
-                1>&2 echo -e '\x1b[0\n'
+                printvar_named "${varname}"
             done
             1>&2 echo -e '\x1b[0\n'
         done

@@ -166,37 +166,17 @@ fi
 
 cls() {
 
-    1>&2 echo -en "\x1b[2J\x1b[3J\x1b[H"
+    1>&2 echo -e "\x1b[2J\x1b[3J\x1b[H"
     1>&2 echo -e '\n'
 
 }
 
-printvar_named() {
-    local -- varname="$1"
-    1>&2 declare -p "${varname}"
-    local -i code=0
-    # if [[ -v refvar ]]; then
-    #     unset -n refvar
-    # fi
-    if local -I -n refvar="${varname}"; then
-        code=0
-    else
-        code=$?
-    fi
+# cHJpbnR2YXJfbmFtZWQoKSB7CiAgICBsb2NhbCAtLSB2YXJuYW1lPSIkMSIKICAgIGxvY2FsIC1pIGNvZGU9MAogICAgIyBpZiBbWyAtdiByZWZ2YXIgXV07IHRoZW4KICAgICMgICAgIHVuc2V0IC1uIHJlZnZhcgogICAgIyBmaQogICAgaWYgbG9jYWwgLUkgLW4gcmVmdmFyPSIke3Zhcm5hbWV9IjsgdGhlbgogICAgICAgIGNvZGU9MAogICAgZWxzZQogICAgICAgIGNvZGU9JD8KICAgIGZpCgogICAgaWYgWyAiJHtjb2RlfSIgLW5lIDAgXTsgdGhlbgogICAgICAgIDE+JjIgZWNobyAtZSAiZmFpbGVkIHRvIHByaW50IHZhciAke3Zhcm5hbWVAUX0iCiAgICAgICAgcmV0dXJuICR7Y29kZX0KICAgIGZpCiAgICBlY2hvIC1lICdceDFiWzE7Mzg7Mjs4NTs4Nzs4M21ceDFiWzE7NDg7MjsxMzg7MjI2OzUybScKICAgIGVjaG8gLWUgIiR7dmFybmFtZX09JHtyZWZ2YXJAUX0iCiAgICBlY2hvIC1lICdceDFiWzBcbicKfQo=
 
-    if [ "${code}" -ne 0 ]; then
-        1>&2 echo -en "failed to print var ${varname@Q}"
-        return ${code}
-    fi
-    echo -en '\x1b[1;38;2;85;87;83m\x1b[1;48;2;138;226;52m'
-    echo -en "${varname}=${refvar@Q}"
-    echo -e '\x1b[0\n'
-
-}
 main() {
     # declare -A from_to_first_commands_map=()
 
-    1>&2 echo -en "\x1b[2J\x1b[3J\x1b[H"
+    1>&2 echo -e "\x1b[2J\x1b[3J\x1b[H"
     echo -e "${#from_commands[@]} from_commands: ${from_commands[@]@Q}\n"
     echo -e "${#to_first_commands[@]} to_first_commands: ${to_first_commands[@]@Q}\n"
     echo -e "${#to_existing_commands[@]} to_existing_commands: ${to_existing_commands[@]@Q}\n"
@@ -213,7 +193,7 @@ main() {
         from_commands_pos=""
 
         from_commands_current=$((from_commands_index + 1))
-        from_command_value="${from_commands[${from_commands_index}]}"
+        from_commands_value="${from_commands[${from_commands_index}]}"
         from_commands_pos="$(printf '%*s of %s' ${#from_commands_count} ${from_commands_current} ${from_commands_count})"
 
     echo
@@ -224,13 +204,25 @@ main() {
             to_commands_pos=""
 
             to_commands_current=$((to_commands_index + 1))
-            to_command_value="${to_commands[${to_commands_index}]}"
+            to_commands_value="${to_commands[${to_commands_index}]}"
             to_commands_pos="$(printf '%*s of %s' ${#to_commands_count} ${to_commands_current} ${to_commands_count})"
-            1>&2 echo -en '\x1b[1;48;2;85;87;83m\x1b[1;38;2;138;226;52m'
-            varnames=($(echo "${!from_*} ${!to_*}"))
-            1>&2 echo -en "varnames:\x1b[0m\n"
-            for varname in ${varnames[@]}; do
-                printvar_named "${varname}"
+            1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;138;226;52m'
+            # varnames=($(echo "${!from_*} ${!to_*}"))
+            varnames=($(echo -e "\n${!to_*}\n"))
+            1>&2 echo -e "${#varnames[@]} varnames:\n"
+            for varname in $(echo "${varnames[*]}" | sed -E 's/[[:space:]]+/\n\n/g'); do
+                if [[ -v refvar ]]; then
+                    unset -n refvar
+                fi
+                if [[ -v "${varname}" ]]; then
+                    local -I -n refvar="${varname}"
+                    1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;245;121;0m'
+                    1>&2 echo -e "varname => ${varname}"
+                    1>&2 declare -p varname "${varname}"
+                    1>&2 declare -p refvar
+                    1>&2 echo -e "varname => ${varname}\n"
+                    1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;138;226;52m'
+                fi
             done
             1>&2 echo -e '\x1b[0\n'
         done

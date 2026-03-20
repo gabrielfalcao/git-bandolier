@@ -94,14 +94,16 @@ declare -a to_commands=(
     ${to_first_commands[@]}
     ${to_existing_commands[@]}
 )
+declare -gA from_to_commands_map=()
+declare -gA to_from_commands_map=()
 declare -gi from_commands_count=${#from_commands[@]}
 declare -gi to_commands_count=${#to_commands[@]}
-declare -gi from_commands_index=0
-declare -gi to_commands_index=0
+declare -gi from_index=0
+declare -gi to_index=0
 declare -gi from_commands_current=0
 declare -gi to_commands_current=0
-declare -g from_commands_value=""
-declare -g to_commands_value=""
+declare -g from_command_value=""
+declare -g to_command_value=""
 declare -g from_commands_pos=""
 declare -g to_commands_pos=""
 
@@ -186,46 +188,47 @@ main() {
     to_commands_count=${#to_commands[@]}
     cls
     echo
-    for from_commands_index in ${!from_commands[@]}; do
-        from_commands_index=0
-        from_commands_current=0
-        from_commands_value=""
+    for from_index in ${!from_commands[@]}; do
+        from_command_value=""
         from_commands_pos=""
 
-        from_commands_current=$((from_commands_index + 1))
-        from_commands_value="${from_commands[${from_commands_index}]}"
+        from_commands_current=$((from_index + 1))
+        from_command_value="${from_commands[${from_index}]}"
         from_commands_pos="$(printf '%*s of %s' ${#from_commands_count} ${from_commands_current} ${from_commands_count})"
+        if [[ -v from_to_commands_map["${from_command_value}"] ]]; then
+            continue
+        fi
+        if [[ -v to_from_commands_map["${from_command_value}"] ]]; then
+            continue
+        fi
 
-    echo
-        for to_commands_index in ${!to_commands[@]}; do
-            to_commands_index=0
-            to_commands_current=0
-            to_commands_value=""
+        for to_index in ${!to_commands[@]}; do
+            to_command_value=""
             to_commands_pos=""
 
-            to_commands_current=$((to_commands_index + 1))
-            to_commands_value="${to_commands[${to_commands_index}]}"
+            to_commands_current=$((to_index + 1))
+            to_command_value="${to_commands[${to_index}]}"
             to_commands_pos="$(printf '%*s of %s' ${#to_commands_count} ${to_commands_current} ${to_commands_count})"
-            1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;138;226;52m'
-            # varnames=($(echo "${!from_*} ${!to_*}"))
-            varnames=($(echo -e "\n${!to_*}\n"))
-            1>&2 echo -e "${#varnames[@]} varnames:\n"
-            for varname in $(echo "${varnames[*]}" | sed -E 's/[[:space:]]+/\n\n/g'); do
-                if [[ -v refvar ]]; then
-                    unset -n refvar
-                fi
-                if [[ -v "${varname}" ]]; then
-                    local -I -n refvar="${varname}"
-                    1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;245;121;0m'
-                    1>&2 echo -e "varname => ${varname}"
-                    1>&2 declare -p varname "${varname}"
-                    1>&2 declare -p refvar
-                    1>&2 echo -e "varname => ${varname}\n"
-                    1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;138;226;52m'
-                fi
-            done
-            1>&2 echo -e '\x1b[0\n'
+
+            # from_to_commands_map=()
+            if [[ ! -v from_to_commands_map["${from_command_value}"] ]] && [[ ! -v from_to_commands_map["${to_command_value}"] ]]; then
+                1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;245;121;0m'
+                1>&2 echo -en "${from_command_value@A}\x1b[0m\n"
+                1>&2 echo -en '\x1b[1;48;2;46;52;54m\x1b[1;38;2;138;226;52m'
+                1>&2 echo -en "${to_command_value@A}\x1b[0m\n"
+                1>&2 echo -en '\x1b[0\n'
+                from_to_commands_map["${from_command_value}"]="${to_command_value}"
+                to_from_commands_map["${to_command_value}"]="${from_command_value}"
+                continue
+            fi
         done
+        if [[ -v from_to_commands_map["${from_command_value}"] ]]; then
+            continue
+        fi
+        if [[ -v to_from_commands_map["${from_command_value}"] ]]; then
+            continue
+        fi
+
     done
 
     # 0=`local -- pos=`

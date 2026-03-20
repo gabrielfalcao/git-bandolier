@@ -62,6 +62,7 @@ def scope():
             "br",
             "remotes",
             "ignore",
+            "establish",
         ]
     )
 

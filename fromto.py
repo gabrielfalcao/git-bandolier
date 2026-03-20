@@ -1,30 +1,13 @@
 #!/usr/bin/env python3
-
-import dataclasses
-import json
-import math
 import os
-import re
-import shutil
-import subprocess
 import sys
-import urllib
-import urllib.parse
-from collections import OrderedDict
-from dataclasses import dataclass, field
-from datetime import UTC, datetime, timedelta
-from decimal import Decimal
-from itertools import chain
-from pathlib import Path
-from pprint import pformat, pprint
-from subprocess import Popen
-from typing import Dict, List, Optional, Self, Tuple, Union
-
+import json
+import io
 import click
 
 
 def unique_list(items):
-    return list(OrderedDict([(m, hash(m)) for m in items]).keys())
+    return list(dict([(m, hash(m)) for m in items]).keys())
 
 
 def scope():
@@ -87,7 +70,7 @@ def scope():
             "branch_format_the_struggle_aint_virtual",
             "commit",
             "commit_unstaged_and_untracked",
-            "common_ancestor_to_ref",
+            "common_ancestor",
             "filenames_diff_list",
             "files_changed_since",
             "init_g",
@@ -100,7 +83,6 @@ def scope():
             "offline",
             "onesum",
             "path",
-            "q_broken_i_e_wip",
             "show_config",
             "status_porcelain_gawk",
             "status_print_path_if",

@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+set -u
+
+export IFS=$'\n'
+
+script_name="$(basename "${BASH_SOURCE[0]}")"
+script_path="$(2>/dev/random 1>/dev/random cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
+this_script_path="${script_path}/${script_name}"
+
+declare -a argv=($@)
+declare -i argc=${#argv[@]}
+declare -- git_repo_root=""
+declare -- stderr=$(mktemp)
+declare -i exit_code=1;
+
+if ! git_repo_root=$(2>${stderr} git rev-parse --show-toplevel); then
+    exit_code=$?
+    1>&2 echo -e "[error] not a git repo: $(pwd)"
+    1>&2 cat ${stderr}
+    exit ${exit_code}
+fi
+git_repo=$(path canon -uf "${git_repo_root}")
+
+
+echo "root ${git_repo@Q}"

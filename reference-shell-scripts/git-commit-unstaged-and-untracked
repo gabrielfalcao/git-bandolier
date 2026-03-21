@@ -1,0 +1,113 @@
+#!/usr/bin/env bash
+
+declare -r ifs_lb=$'\n'
+declare -r ifs_old=${IFS:-${ifs_lb}}
+export IFS=$'\n'
+set -umeTE
+set +f
+set -o pipefail
+export IFS="${ifs_old}"
+
+declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -- this_script_path="${script_path}/${script_name}"
+
+declare -a argv=("$@")
+declare -i argc=${#argv[@]}
+declare -a stdin_lines=()
+declare -i stdin_line_count=${#stdin_lines[@]}
+declare -- git_repo_path=""
+declare -i code=0
+declare -- cwd=$(path canon -f ".")
+
+if ! git_repo_path=$(git rev-parse --show-toplevel); then
+    code=$?
+    1>&2 echo -e "[${script_name} error]" "not under git repo: ${cwd@Q}"
+    exit ${code}
+fi
+#export IFS=$'\n';cls;declare -a files_to_add_and_commit=(); files_to_add_and_commit=( $(git status --porcelain |  grep -E '^[ ?][?]' | lastcol | xargs ls -latrh | awk '{ printf("\n%s\n\n", $9); }' ))
+declare -a stat_formats=(
+    "%w"
+    "%x"
+    "%y"
+    "%z"
+)
+declare -A stat_format_descriptions=()
+stat_format_descriptions["%w"]="       created"
+stat_format_descriptions["%x"]="      accessed"
+stat_format_descriptions["%y"]="      modified"
+stat_format_descriptions["%z"]="status changed"
+
+export IFS=$'\n';
+
+declare -a files_to_add_and_commit=();
+files_to_add_and_commit=( $(git status --porcelain |  grep -E '^[ ?][?]' | lastcol | xargs ls -latrh | awk '{ printf("\n%s\n\n", $9) }' ))
+
+declare -a commit_body_lines=();
+declare -- commit_subject='';
+declare -- commit_body='';
+declare -- what="";
+declare -- tmpval="";
+declare -- stderr=$(mktemp);
+declare -A commit_messages_by_filename=();
+declare -A filenames_not_found=()
+
+for filename in ${files_to_add_and_commit[@]}; do
+    commit_body_lines=()
+    commit_subject=''
+    commit_body=''
+    what=""
+    tmpval=""
+
+    if [ -e "${filename}" ]; then
+        for fmt in ${stat_formats[@]}; do
+            if tmpval=$(2>${stderr} gstat -c "${fmt}" "${filename}") && [ -n "${tmpval}" ]; then
+                what="${stat_format_descriptions[${fmt}]}"
+                commit_body_lines+=("${what}: ${tmpval}")
+            fi
+        done
+        export IFS=$'\n'
+        if [ ${#commit_body_lines[@]} -gt 0 ]; then
+            commit_body=$(echo "${commit_body_lines[*]}")
+            commit_subject="introduces ${filename}"
+            declare -a parts=(
+                "${commit_subject}"
+                ""
+                ""
+                 "${commit_body}"
+            )
+            commit_messages_by_filename["${filename}"]="$(echo "${parts[*]}")"
+        fi
+    else
+        filenames_not_found["${filename}"]="${filename}"
+    fi
+done
+
+if [ ${#files_to_add_and_commit[@]} -eq 0 ] && [ ${#filenames_not_found[@]} -gt 0 ]; then
+    1>&2 echo -e "[${script_name} error]" "cannot find files: ${!filenames_not_found[@]@Q}"
+    exit 1
+elif [ ${#files_to_add_and_commit[@]} -gt 0 ]; then
+    declare -- message="";
+    declare -- error_message=''
+    declare -a git_error_messages=()
+    declare -A error_codes_by_git_error_message=()
+    for filename in ${files_to_add_and_commit[@]}; do
+        code=0;
+        message=${commit_messages_by_filename["${filename}"]};
+        if ! git add -f "${filename}"; then
+            code=$?;
+            error_message="failed to git add file ${filename@Q}"
+            git_error_messages+=("${error_message}")
+            error_codes_by_git_error_message["${error_message}"]="${code}"
+            continue
+        fi
+
+        if ! git commit "${filename}" -m "${message}"; then
+            code=$?;
+            error_message="failed to git commit file ${filename@Q}"
+            git_error_messages+=("${error_message}")
+            error_codes_by_git_error_message["${error_message}"]="${code}"
+            continue
+        fi
+    done
+fi

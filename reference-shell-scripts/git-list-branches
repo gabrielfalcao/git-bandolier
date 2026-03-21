@@ -1,0 +1,411 @@
+#!/usr/bin/env bash
+. ${HOME}/opt/lib/ansi.sh
+unset IFS
+
+set -e
+set -o pipefail
+set -o errtrace # or set -E
+# set -o noglob
+set -u
+declare -a argv=($@)
+declare -i argc=${#argv[@]}
+
+declare -- error_prefix_color_rgb="255;0;66"
+declare -- error_color_rgb="255;50;50"
+declare -- error_color_rgb="255;62;92"
+declare -- warn_prefix_color_rgb="255;106;50"
+declare -- warn_color_rgb="255;161;50"
+
+declare -i padding_by=4
+declare -- padding="$(make_indent ${padding_by})"
+declare -a displayed_branch_names=()
+declare -- include_remotes=""
+declare -- sorting=""
+declare -- arg_value=""
+declare -- color_active="\x1b[1;38;2;$((0xFF));$((0xBB));$((0x11))m"
+declare -- color_remote="\x1b[1;38;2;255;106;50m"
+declare -- color_local="\x1b[1;38;2;255;255;255m"
+declare -- branch_name=""
+declare -- branch_hash=""
+
+declare current_working_path=""
+
+declare -- arg_key_value_regex='^(([-]+[a-z0-9_-]+)((=)(.*)))$'
+declare -- arg_value_regex='^([^-]+.*)$'
+declare -- arg=""
+declare -- arg_key=""
+declare -- arg_value=""
+declare -- next_arg=""
+declare -i index=0
+declare -i next_index=0
+declare -i current=0
+
+if ! git_repo_path=$(git rev-parse --show-toplevel); then
+    1>&2 echo "not a git repo dir: ${current_working_path@Q}"
+    exit 1
+fi
+
+cd "${git_repo_path}"
+declare -- active_branch="$(git branch | ansistrip | ack '[*]\s*[a-z0-9_-]+' | lastcol | tail -1 | tr -d '\n')"
+
+declare -A branch_list_hash_by_name=()
+declare -A branch_list_date_iso_by_name=()
+declare -A branch_list_date_iso_strict_by_name=()
+declare -A branch_list_date_unix_by_name=()
+declare -A branch_list_date_rfc_by_name=()
+declare -i branch_name_widest=$(wc -c <<<"BRANCH NAME")
+declare -x IFS=$'\n'
+
+warn_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${warn_prefix_color_rgb}m${prefix}\x1b[1;38;2;${warn_color_rgb}m ${message}\x1b[0m"
+}
+warn() {
+    local -- linenum="${BASH_LINENO[0]}"
+    warn_prefixed "[${script_name} warn at ${linenum}]" "${@}"
+}
+
+error() {
+    local -- linenum="${BASH_LINENO[0]}"
+    error_prefixed "[${script_name} error at ${linenum}]" "${@}"
+}
+error_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${error_prefix_color_rgb}m${prefix}\x1b[1;38;2;${error_color_rgb}m ${message}\x1b[0m"
+}
+
+parse_sort_spec() {
+    local -a params=($@)
+    local -i param_count=${#params[@]}
+    if [ ${param_count} -eq 0 ]; then
+        1>&2 echo "[error parse_sort_spec] missing arguments: \${command_line_arg} \${command_line_value}"
+        return 1
+    elif [ ${param_count} -eq 1 ]; then
+        1>&2 echo "[error parse_sort_spec] missing second argument: \${command_line_value}"
+        return 1
+    elif [ ${param_count} -gt 2 ]; then
+        1>&2 echo "[error parse_sort_spec] too many arguments ${param_count}: ${params[@]@Q}"
+        return 1
+    fi
+    local -- command_line_arg="$1"
+    local -- command_line_value="$2"
+    # warn_prefixed "command_line_arg" "${command_line_arg}"
+    # warn_prefixed "command_line_value" "${command_line_value}"
+    local -- result=""
+    case "${command_line_value}" in
+        date | date-asc | date-ascending | asc-date | ascending-date | timestamp | timestamp-asc | timestamp-ascending | asc-timestamp | ascending-timestamp | datetime | datetime-asc | datetime-ascending | asc-datetime | ascending-datetime | commit-date | commit-date-asc | commit-date-ascending | asc-commit-date | ascending-commit-date)
+            result="date-ascending"
+            ;;
+
+        date | reverse-date | date-reverse | date-desc | date-descending | desc-date | descending-date | timestamp | reverse-timestamp | timestamp-reverse | timestamp-desc | timestamp-descending | desc-timestamp | descending-timestamp | datetime | reverse-datetime | datetime-reverse | datetime-desc | datetime-descending | desc-datetime | descending-datetime | commit-date | reverse-commit-date | commit-date-reverse | commit-date-desc | commit-date-descending | desc-commit-date | descending-commit-date)
+            result="date-descending"
+            ;;
+        original | regular | default | standard | normal)
+            result="original"
+            ;;
+        *)
+            error_prefixed "[error] invalid sorting specification:" "${command_line_value}"
+            return 1
+            ;;
+    esac
+    echo "${result}"
+}
+if [ ${argc} -gt 0 ]; then
+    for index in ${!argv[@]}; do
+        arg=${argv[$index]}
+        current=$(($index + 1))
+        arg_key=""
+        arg_value=""
+        if [ $(($index + 1)) -lt ${argc} ]; then
+            next_index=$(($index + 1))
+            next_arg=${argv[$next_index]}
+        else
+            next_arg=""
+        fi
+        if ! arg_key=$(sed -n -E "/${arg_key_value_regex}/{s/${arg_key_value_regex}/\2/gp};t success q1; :success q0" <<<"${arg}"); then
+            arg_key="${arg}"
+        fi
+        if ! arg_value=$(sed -n -E "/${arg_key_value_regex}/{s/${arg_key_value_regex}/\5/gp};t success q1; :success q0" <<<"${arg}"); then
+            if ! arg_value=$(sed -n -E "/${arg_value_regex}/{s/${arg_value_regex}/\1/gp};t success q1; :success q0" <<<"${next_arg}"); then
+                arg_value=""
+            fi
+        fi
+        case "${arg@L}" in
+            --sorting=* | --sort-by=*)
+                if ! sorting=$(parse_sort_spec "${arg}" "${arg_value}"); then
+                    exit $?
+                fi
+                continue
+                ;;
+            -s | --sorting | --sort-by | --sort)
+                if ! sorting=$(parse_sort_spec "${arg}" "${arg_value}"); then
+                    exit $?
+                fi
+                continue
+                ;;
+            -a | --all)
+                include_remotes="true"
+                continue
+                ;;
+            *)
+                if [ ! -e "${arg}" ]; then
+                    1>&2 echo "WARNING: argument ${current} is not an existing path: ${arg@Q}"
+                    continue
+                elif [ ! -d "${arg}" ]; then
+                    1>&2 echo "WARNING: argument ${current} is not an existing directory: ${arg@Q}"
+                    continue
+                else
+                    if [ -n "${current_working_path}" ]; then
+                        1>&2 echo "WARNING: cannot accept argument ${current} ${arg@Q} because current_working_path already set to ${current_working_path@Q}"
+                        continue
+                    else
+                        current_working_path="${arg}"
+                    fi
+                fi
+                ;;
+        esac
+    done
+fi
+
+if [ -n "${current_working_path}" ]; then
+    2>/dev/random 1>/dev/random cd "${current_working_path}"
+else
+    current_working_path=$(pwd)
+fi
+
+
+list_branches() {
+    if [ -n "${include_remotes}" ] && [ "${include_remotes@L}" == "true" ]; then
+        git branch --all | ansistrip | lastcol
+    else
+        git branch --all | ansistrip | lastcol | ack -v '^remotes/'
+    fi
+}
+
+git_log_branch_head_with_format() {
+    local -a func_argv=(${@})
+    local -i func_argc=${#func_argv[@]}
+    if [ ${func_argc} -ne 2 ]; then
+        1>&2 echo -e "${FUNCNAME[0]} received ${func_argc} arguments but expects exactly 2 arguments <FORMAT> <BRANCH_NAME>"
+        return 1
+    fi
+
+    local -- format="$1"
+    shift
+    local -- branch_name="$1"
+    shift
+    result=$(git log --format="${format}" "${branch_name}" | grep -E -v '^gpg:' | head -1)
+    # 1>&2 echo -e "\nfunc_argv=${func_argv[@]}\nresult=${result}\n"
+    sed -z 's/^\(\s\+\|\n\+\)//g;s/\(\s\+\|\n\+\)$//g' <<< "${result}"
+}
+# sed -z 's/^\(\s\+\|\n\+\)//g;s/\(\s\+\|\n\+\)$//g'
+
+declare -a branch_list=($(list_branches))
+for index in ${!branch_list[@]}; do
+    curr=$(($index + 1))
+    branch_name=${branch_list[$index]}
+    branch_hash="$(git_log_branch_head_with_format "%H" "${branch_name}")"
+    branch_date_iso="$(git_log_branch_head_with_format "%ci" "${branch_name}")"
+    branch_date_iso_strict="$(git_log_branch_head_with_format "%cI" "${branch_name}")"
+    branch_date_unix="$(git_log_branch_head_with_format "%ct" "${branch_name}")"
+    branch_date_rfc="$(git_log_branch_head_with_format "%cD" "${branch_name}")"
+    if [ ${#branch_name} -gt ${branch_name_widest} ]; then
+        branch_name_widest=${#branch_name}
+    fi
+    branch_list_hash_by_name+=(["${branch_name}"]="${branch_hash}")
+    branch_list_date_iso_by_name+=(["${branch_name}"]="${branch_date_iso}")
+    branch_list_date_iso_strict_by_name+=(["${branch_name}"]="${branch_date_iso_strict}")
+    branch_list_date_unix_by_name+=(["${branch_name}"]="${branch_date_unix}")
+    branch_list_date_rfc_by_name+=(["${branch_name}"]="${branch_date_rfc}")
+done
+
+branch_already_displayed() {
+    local branch_name="$1"
+    shift
+    if [ -z "${branch_name}" ]; then
+        1>&2 echo -e "\x1b[1;38;5;202m[error branch_already_displayed]\x1b[1;38;5;247m missing argument: \x1b[1;38;5;231m<BRANCH_NAME>\x1b[0m"
+        return 1
+    fi
+    unset IFS
+    local -- matched=""
+    if matched=$(printf '%s\n' "${displayed_branch_names[@]}" | grep -E "^\s*${branch_name}\s*\$"); then
+        # 1>&2 echo -e "${branch_name} already displayed ${displayed_branch_names[@]}"
+        return 0
+    else
+        return 1
+    fi
+}
+display_branch_by_name() {
+    local -a argv=(${@})
+    local -i argc=${#argv[@]}
+    local -- branch_name="$1"
+
+    if [ -z "${branch_name}" ]; then
+        1>&2 echo -e "\x1b[1;38;5;202m[error display_branch_by_name]\x1b[1;38;5;247m missing argument: \x1b[1;38;5;231m<BRANCH_NAME>\x1b[0m"
+        return 1
+    fi
+    if branch_already_displayed "${branch_name}"; then
+        # already shown
+        return 0
+    fi
+
+    local -i padding_right_by=$(($branch_name_widest - ${#branch_name} + ${padding_by}))
+
+    local -- color_active="\x1b[1;38;2;$((0xFF));$((0xBB));$((0x11))m"
+    local -- color_remote="\x1b[1;38;2;255;106;50m"
+    local -- color_local="\x1b[1;38;2;255;255;255m"
+
+    if [ ${argc} -eq 3 ]; then
+        local -- only_headers="true"
+        local -- branch_hash_input="$2"
+        local -- branch_hash="${branch_hash_input}"
+        local -- branch_date_input="$3"
+        local -- branch_date_iso_strict="${branch_date_input}"
+        local -- branch_date_iso="${branch_date_input}"
+        local -- branch_date_iso_strict="${branch_date_input}"
+        local -- branch_date_unix="${branch_date_input}"
+        local -- branch_date_rfc="${branch_date_input}"
+        local -- color_fg="\x1b[1;38;5;231m"
+
+        # IyAgICAgICAgIGlmICEgMj4vZGV2L3JhbmRvbSAxPi9kZXYvcmFuZG9tIGdyZXAgLWkgLUUgJ15bYS1mMC05XSskJyA8PDwgIiR7YnJhbmNoX2hhc2h9IjsgdGhlbgojICAgICAgICAgICAgIDE+JjIgZWNobyAtZSAiCiMKIwojICAgIFx4MWJbMTszODsyOzI1NTs2Mjs5Mm1FUlJPUiEhISBicmFuY2hfaGFzaCBub3QgaGV4YWRlY2ltYWwKIwojICAgIFx4MWJbMTszODsyOzI1NTsxMDY7NTBtIGFyZ3Y9JHthcmd2W0BdQEF9XHgxYlswbQojCiMgICAgXHgxYlsxOzM4OzI7MjU1OzEwNjs1MG0gb25seV9oZWFkZXJzPSR7b25seV9oZWFkZXJzfVx4MWJbMG0KIyAgICBceDFiWzE7Mzg7MjsyNTU7MTA2OzUwbSBicmFuY2hfbmFtZT0ke2JyYW5jaF9uYW1lfVx4MWJbMG0KIyAgICBceDFiWzE7Mzg7MjsyNTU7MTA2OzUwbSBicmFuY2hfaGFzaD0ke2JyYW5jaF9oYXNofVx4MWJbMG0KIyAgICBceDFiWzE7Mzg7MjsyNTU7MTA2OzUwbSBicmFuY2hfZGF0ZV9pc289JHticmFuY2hfZGF0ZV9pc299XHgxYlswbQojCiMKIwojICIKIwojICAgICAgICAgICAgIGV4aXQgMQojICAgICAgICAgZmkK
+
+    else
+        # local -- branch_hash="${branch_list_hash_by_name[${branch_name}]}"
+        local -- branch_hash="$(git_log_branch_head_with_format "%H" "${branch_name}")"
+        local -- branch_date_iso="${branch_list_date_iso_by_name[${branch_name}]}"
+        local -- branch_date_iso_strict="${branch_list_date_iso_strict_by_name[${branch_name}]}"
+        local -- branch_date_unix="${branch_list_date_unix_by_name[${branch_name}]}"
+        local -- branch_date_rfc="${branch_list_date_rfc_by_name[${branch_name}]}"
+        local -- red="0x${branch_hash:34:2}"
+        local -- green="0x${branch_hash:36:2}"
+        local -- blue="0x${branch_hash:38:2}"
+        local -- color_fg="\x1b[1;38;2;$(($red));$(($green));$(($blue))m"
+    fi
+    local -- name_padding_right="$(make_indent ${padding_right_by})"
+    local -- branch_hash_colored="${color_fg}${branch_hash}\x1b[0m"
+    local -- branch_name_colored="${color_fg}${branch_name}\x1b[0m"
+    if [ "${branch_name}" == "${active_branch}" ]; then
+        echo -e "${color_active}${branch_name}${name_padding_right}${branch_hash}${padding}${branch_date_iso_strict}\x1b[0m"
+    elif 2>/dev/random 1>/dev/random grep -E 'remotes/' <<<"${branch_name}"; then
+        echo -e "${color_remote}${branch_name}${name_padding_right}${color_fg}${branch_hash}${padding}${branch_date_iso_strict}\x1b[0m"
+    else
+        echo -e "${color_local}${branch_name}${name_padding_right}${branch_hash_colored}${padding}${color_fg}${branch_date_iso_strict}"
+    fi
+    displayed_branch_names+=("${branch_name}")
+    # 1>&2 echo -e "${displayed_branch_names[@]@Q}"
+}
+
+display_branches_by_commit_date_descending() {
+    local -i unix_timestamp=0
+    local -- name=""
+    local -a timestamps=($(
+        unset IFS
+        for name in ${branch_list[@]}; do
+            git log --format=%ct "${name}" | head -1
+        done | sort -n -u -r
+    ))
+    local -- matched=""
+    local -- sorted_unix_timestamp=""
+    for sorted_unix_timestamp in ${timestamps[@]}; do
+        for branch_name in ${branch_list[@]}; do
+            branch_unix_ts=${branch_list_date_unix_by_name["${branch_name}"]}
+            if [ "${sorted_unix_timestamp}" == "${branch_unix_ts}" ]; then
+                matched="${branch_name}"
+                display_branch_by_name "${branch_name}"
+            fi
+        done
+    done
+    if [ -z "${matched}" ]; then
+        1>&2 echo -e "could not find branches matching any of the timestamps ${timestamps[@]@Q}"
+        exit 1
+    fi
+
+}
+display_branches_by_commit_date_ascending() {
+    local -i unix_timestamp=0
+    local -a timestamps=($(
+        unset IFS
+        for name in ${branch_list[@]}; do
+            git log --format=%ct "${name}" | head -1
+        done | sort -n -u
+    ))
+    local -- matched=""
+    local -- sorted_unix_timestamp=""
+    for sorted_unix_timestamp in ${timestamps[@]}; do
+        for branch_name in ${branch_list[@]}; do
+            branch_unix_ts=${branch_list_date_unix_by_name["${branch_name}"]}
+            if [ "${sorted_unix_timestamp}" == "${branch_unix_ts}" ]; then
+                matched="${branch_name}"
+                display_branch_by_name "${branch_name}"
+            fi
+        done
+    done
+    if [ -z "${matched}" ]; then
+        1>&2 echo -e "could not find branches matching any of the timestamps ${timestamps[@]}"
+        exit 1
+    fi
+}
+display_branches_by_original_order() {
+    for branch_name in ${branch_list[@]}; do
+        display_branch_by_name "${branch_name}"
+    done
+}
+display_branch_by_name "BRANCH NAME" "LAST COMMIT HASH" "LAST COMMIT DATE"
+
+display_branch_by_name "${active_branch}"
+
+case "${sorting}" in
+    "date-descending")
+        display_branches_by_commit_date_descending
+        ;;
+    "date-ascending")
+        display_branches_by_commit_date_ascending
+        ;;
+    "original")
+        display_branches_by_original_order
+        ;;
+    *)
+        display_branches_by_commit_date_descending
+        ;;
+esac
+
+# `%H` => commit hash
+# `%h` => abbreviated commit hash
+# `%T` => tree hash
+# `%t` => abbreviated tree hash
+# `%P` => parent hashes
+# `%p` => abbreviated parent hashes
+# `%an` => author name
+# `%aN` => author name (respecting .mailmap, see linkgit:git-shortlog[1] or linkgit:git-blame[1])
+# `%ae` => author email
+# `%aE` => author email (respecting .mailmap, see linkgit:git-shortlog[1] or linkgit:git-blame[1])
+# `%al` => author email local-part (the part before the `@` sign)
+# `%aL` => author local-part (see +%al+) respecting .mailmap, see linkgit:git-shortlog[1] or linkgit:git-blame[1])
+# `%ad` => author date (format respects --date= option)
+# `%aD` => author date, RFC2822 style
+# `%ar` => author date, relative
+# `%at` => author date, UNIX timestamp
+# `%ai` => author date, ISO 8601-like format
+# `%aI` => author date, strict ISO 8601 format
+# `%as` => author date, short format (`YYYY-MM-DD`)
+# `%ah` => author date, human style (like the `--date=human` option of linkgit:git-rev-list[1])
+# `%cn` => committer name
+# `%cN` => committer name (respecting .mailmap, see linkgit:git-shortlog[1] or linkgit:git-blame[1])
+# `%ce` => committer email
+# `%cE` => committer email (respecting .mailmap, see linkgit:git-shortlog[1] or linkgit:git-blame[1])
+# `%cl` => committer email local-part (the part before the `@` sign)
+# `%cL` => committer local-part (see +%cl+) respecting .mailmap, see linkgit:git-shortlog[1] or linkgit:git-blame[1])
+# `%cd` => committer date (format respects --date= option)
+# `%cD` => committer date, RFC2822 style
+# `%cr` => committer date, relative
+# `%ct` => committer date, UNIX timestamp
+# `%ci` => committer date, ISO 8601-like format
+# `%cI` => committer date, strict ISO 8601 format
+# `%cs` => committer date, short format (`YYYY-MM-DD`)
+# `%ch` => committer date, human style (like the `--date=human` option of linkgit:git-rev-list[1])
+# `%d` => ref names, like the --decorate option of linkgit:git-log[1]
+# `%D` => ref names without the " (", ")" wrapping.

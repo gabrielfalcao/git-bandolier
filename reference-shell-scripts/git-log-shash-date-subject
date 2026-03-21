@@ -1,0 +1,182 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2004,SC2206,SC2068,SC2086
+
+set -e
+set -o pipefail
+set -u
+export IFS=$'\n'
+
+script_name="$(basename "${BASH_SOURCE[0]}")"
+script_path="$(2>/dev/random 1>/dev/random cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
+this_script_path="${script_path}/${script_name}"
+
+declare -a argv=($@)
+declare argc=${#argv[@]}
+
+declare -- git_ref=""
+declare -- first_line="   NOW: $(date +'%Y-%m-%d %H:%M:%S %z')\n"
+declare -- log_format='%x1b[1;38;5;231m%h %x1b[1;38;5;202m%ci %x1b[1;38;5;154m%s%x1b[0m'
+declare -i max_lines=0
+
+declare -i index=0
+declare -i current=0
+declare -- arg=""
+declare -- next_arg=""
+declare -i tmp_max=0
+declare -- take_from="head" # or tail
+
+error_prefix_color_rgb="255;0;66"
+error_color_rgb="255;50;50"
+error_color_rgb="255;62;92"
+warn_prefix_color_rgb="255;106;50"
+warn_color_rgb="255;161;50"
+
+
+on_exit() {
+    repl sane
+}
+on_ctrlc() {
+    repl no echo
+    1>&2 echo -e "\x1b[1;38;2;${error_color_rgb}m\rAborted with Ctrl-C\x1b[0m"
+    repl sane
+    exit 1
+}
+trap on_exit exit
+trap on_ctrlc hup
+trap on_ctrlc int
+trap on_ctrlc bus
+trap on_ctrlc segv
+trap on_ctrlc sys
+
+repl() {
+    local -a stty_args=()
+    case "$1" in -*no*stdin | no*stdin | -*no*echo | no*echo | capture) args+=('-echo') ;; *) args+=('sane') ;; esac
+    2>/dev/random 1>/dev/random stty ${stty_args[@]}
+}
+usage() {
+    repl no echo
+    1>&2 echo -e "$(basename $0) <ARGUMENT>"
+    repl sane
+}
+exit_error() {
+    error "${@}"
+    exit 1
+}
+warn_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${warn_prefix_color_rgb}m[${prefix}]\x1b[1;38;2;${warn_color_rgb}m\n${message}\x1b[0m"
+}
+warn() {
+    local -- linenum="${BASH_LINENO[1]}"
+    warn_prefixed "[${script_name} warn at ${linenum}]" "${@}"
+}
+
+error() {
+    local -- linenum="${BASH_LINENO[1]}"
+    error_prefixed "[${script_name} error at ${linenum}]" "${@}"
+}
+error_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${error_prefix_color_rgb}m[${prefix}]\x1b[1;38;2;${error_color_rgb}m\n${message}\x1b[0m"
+}
+
+process_argv() {
+    repl no echo
+
+    for index in ${!argv[@]}; do
+        current=$(( $index + 1 ))
+        arg="${argv[$index]}"
+        if [ ${current} -le ${argc} ]; then
+            next_arg=${argv[$current]}
+        else
+            next_arg=""
+        fi
+        case "${arg}" in
+            "-m"|"--max")
+                if 1>/dev/random grep -E '^[1-9][0-9]*$' <<< "${next_arg}"; then
+                    declare -i tmp_max=$(( $next_arg ))
+                    if [ ${tmp_max} -lt 0 ]; then
+                        take_from="tail"
+                        tmp_max=$(( $tmp_max * -1 ))
+                    fi
+                    if [ ${max_lines} -lt 1 ] || [ ${tmp_max} -gt ${max_lines} ]; then
+                        max_lines=${tmp_max}
+                    else
+                        warn "skipping value ${next_arg@Q} of option ${arg@Q}"
+                        continue
+                    fi
+                else
+                    exit_error "invalid non-number value of option ${arg@Q}: ${next_arg@Q}"
+                    continue
+                fi
+                ;;
+            "-r"|"--ref"|"--git-ref"|"--gitref")
+                if 1>/dev/random grep -i -E '^[a-z0-9]*$' <<< "${next_arg}"; then
+                    declare -i tmp_max=$(( $next_arg ))
+                    if [ ${tmp_max} -lt 0 ]; then
+                        take_from="tail"
+                        tmp_max=$(( $tmp_max * -1 ))
+                    fi
+                    if [ ${max_lines} -lt 1 ] || [ ${tmp_max} -gt ${max_lines} ]; then
+                        max_lines=${tmp_max}
+                    else
+                        warn "skipping value ${next_arg@Q} of option ${arg@Q}"
+                        continue
+                    fi
+                else
+                    exit_error "invalid non-number value of option ${arg@Q}: ${next_arg@Q}"
+                    continue
+                fi
+                ;;
+        esac
+    done
+    repl sane
+}
+
+main() {
+    local -a git_log_output=$(git log --format="${log_format}") | ${take_from} -${max_lines}
+    exit $?
+}
+
+if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
+    process_argv ${argv[@]}
+    main
+else
+    1>&2 echo -e "${BASH_SOURCE[0]} appears to being used as a library by ${0@Q}"
+fi
+repl sane
+
+
+
+grep -E '^([^.]|[.][^.]|[[:space:]~^:*?]|[[]|[]]|[^/][/][^/]|[^@]|[@][^{]|[^\\])([.][.])?$'
+grep -E '([^.]|[.][^.]|[[:space:]~^:*?]|[[]|[]]|[^/][/][^/]|[^@]|[@][^{]|[^\\])'
+
+# ________
+# GIT REFS:
+# *********
+#
+# \040, or \177 DEL), space, tilde ~, caret ^, or colon : anywhere.
+#
+# They can include slash `/` for hierarchical (directory) grouping, but no slash-separated component can begin with a dot `.` or end with the sequence `.lock`
+#
+# They must contain at least one /. This enforces the presence of a category like heads/, tags/ etc. but the actual names are not restricted. If the --allow-onelevel option is used, this rule is waived.
+#
+# They cannot have two consecutive dots .. anywhere.
+#
+# They cannot have ASCII control characters (i.e. bytes whose values are lower than \040, or \177 DEL), space, tilde ~, caret ^, or colon : anywhere.
+#
+# They cannot have question-mark ?, asterisk *, or open bracket [ anywhere. See the --refspec-pattern option below for an exception to this rule.
+#
+# They cannot begin or end with a slash / or contain multiple consecutive slashes (see the --normalize option below for an exception to this rule).
+#
+# They cannot end with a dot ..
+#
+# They cannot contain a sequence @{.
+#
+# They cannot be the single character @.
+#
+# They cannot contain a \.

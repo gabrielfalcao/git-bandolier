@@ -1,0 +1,91 @@
+#!/usr/bin/env emacs -nw -x -Q --no-desktop --script
+
+set -e
+export IFS="
+"
+if ! git_repo_path=$(2>/dev/random git rev-parse --show-toplevel); then
+    1>&2 echo -e "$(pwd) is not a git repo"
+    exit 1
+fi
+
+# <2026-02-19 18:59:23+0000>
+# \,(let* (
+#      (regexp  "\x5c\x5c\x28\x5b\x3d\x5d\x3f\x5c\x5c\x29\x5c\x5c\x28\x5b\x22\x27\x5d\x5c\x5c\x29\x5c\x5c\x28\x66\x61\x6c\x73\x65\x5c\x5c\x7c\x74\x72\x75\x65\x5c\x5c\x29\x5c\x5c\x28\x5c\x32\x5c\x5c\x29" )
+#      (to-string    (progn (let* (
+#                            (prefix \1)
+#                            (quote-char \2)
+#                            (old-value (downcase \3))
+#                            (new-value (if (string= old-value "true") 1 0))
+#                         )
+#                 (format "%s%d" prefix new-value)
+#               )))
+#      )
+#      (replace-regexp regexp to-string)
+# )
+# </2026-02-19 18:59:23+0000>
+
+declare -a argv=( $@ )
+declare argc=${#argv[@]}
+declare -i show_name="false"
+declare -i remove_bare="false"
+declare -i open_in_browser="false"
+
+for index in ${!argv[@]}; do
+    arg="${argv[$index]}"
+    case "${arg}" in
+        "-n"|"--name")
+            show_name="true"
+            ;;
+        "-u"|"--url"|"--web"|"-w"|-*no*bare|web|url)
+            remove_bare="true"
+            ;;
+        "-o"|-*open|open|browse|-*browse|browser)
+            remove_bare="true"
+            open_in_browser="true"
+            ;;
+        *)
+            ;;
+    esac
+done
+
+cols=$(term-columns)
+declare -a git_remote_names=( $(git remote show -n) )
+widest_remote_length=0
+widest_url_length=0
+minpad=2
+
+for remote in ${git_remote_names[@]}; do
+    url=$(git remote get-url ${remote})
+    if [ ${#remote} -gt ${widest_remote_length} ]; then
+        widest_remote_length=$(( ${#remote} + ${minpad} ))
+    fi
+    if [ ${#url} -gt ${widest_url_length} ]; then
+        widest_url_length=$(( ${#url} + ${minpad} ))
+    fi
+done
+
+widest_sum=$(( ${widest_url_length} + ${widest_remote_length} ))
+space_required=$(( ${widest_sum} ))
+space_left=$(( ${cols} - ${space_required} ))
+delta=${space_left}
+
+while [ $(( ${delta} / 2 )) -gt ${widest_remote_length} ]; do
+    delta=$(( ${delta} / 2 ))
+done
+
+
+for remote in ${git_remote_names[@]}; do
+    rpadlen=$(( ${widest_remote_length} - ${#remote} + ${delta} ))
+    pad=$(seq ${rpadlen} | tr '\n' ' ' | tr -d '[0-9]')
+    url=$(git remote get-url ${remote})
+    if [ "${remove_bare}" == "true" ]; then
+        url=${url%.git}
+    fi
+    if [ "${show_name}" == "true" ]; then
+        echo -e "${remote}${pad}${url}"
+    elif [ "${open_in_browser}" == "true" ]; then
+        open "${url}"
+    else
+        echo -e "${url}"
+    fi
+done

@@ -1,0 +1,342 @@
+#!/usr/bin/env bash
+
+declare -r ifs_lb=$'\n'
+declare -r ifs_old=${IFS:-${ifs_lb}}
+export IFS=$'\n'
+set -umeTE
+set +f
+set -o pipefail
+export IFS="${ifs_old}"
+
+declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+declare -- this_script_path="${script_path}/${script_name}"
+
+declare -a argv=("$@")
+declare -i argc=${#argv[@]}
+declare -a stdin_lines=("$@")
+declare -i stdin_line_count=${#stdin_lines[@]}
+declare -i code=0
+declare -- curdir="$PWD"
+
+declare -- git_core_libexec="$(path canon $(brew --prefix git)/libexec/git-core)"
+declare -- git_commit="${git_core_libexec}/git-commit"
+
+declare -i git_commit_timestamp=0
+declare -a git_commit_args=()
+
+declare -- error_prefix_color_rgb="239;41;41"
+declare -- error_color_rgb="204;0;0"
+
+declare -- achtung_prefix_color_rgb="245;121;0"
+declare -- achtung_color_rgb="206;92;0"
+
+declare -- warn_prefix_color_rgb="252;233;79"
+declare -- warn_color_rgb="237;212;00"
+
+declare -- info_prefix_color_rgb="52;101;164"
+declare -- info_color_rgb="114;159;207;"
+
+declare -- msg_prefix_color_rgb="186;189;182"
+declare -- msg_color_rgb="136;138;133"
+
+declare -- display_prefix_color_rgb="238;238;236"
+declare -- display_color_rgb="211;215;207"
+
+declare -- debug_prefix_color_rgb="138;226;52"
+declare -- debug_color_rgb="115;210;22"
+
+on_exit() {
+    2>/dev/random 1>/dev/random stty sane
+}
+on_ctrlc() {
+    1>&2 echo -e "\x1b[1;38;2;${error_color_rgb}m\rAborted with Ctrl-C\x1b[0m"
+    exit 1
+}
+trap on_exit exit
+trap on_ctrlc hup
+trap on_ctrlc int
+trap on_ctrlc bus
+trap on_ctrlc segv
+trap on_ctrlc sys
+
+repl() {
+    local -a stty_args=()
+    case "$1" in -*no*stdin | no*stdin | -*no*echo | no*echo | capture) args+=('-echo') ;; *) args+=('sane') ;; esac
+    2>/dev/random 1>/dev/random stty "${stty_args[@]}"
+}
+usage() {
+    repl no echo
+    1>&2 echo -e "$(basename "$0") <ARGUMENT>"
+    repl sane
+}
+exit_error() {
+    error "${@}"
+    exit 1
+}
+
+achtung_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${achtung_prefix_color_rgb}m${prefix}\x1b[1;38;2;${achtung_color_rgb}m ${message}\x1b[0m"
+}
+achtung() {
+    local -- linenum="${BASH_LINENO[0]}"
+    achtung_prefixed "[achtung]  [${script_name}:${linenum}]" "${@}"
+}
+warn_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${warn_prefix_color_rgb}m${prefix}\x1b[1;38;2;${warn_color_rgb}m ${message}\x1b[0m"
+}
+warn() {
+    local -- linenum="${BASH_LINENO[0]}"
+    warn_prefixed "[warn]  [${script_name}:${linenum}]" "${@}"
+}
+error() {
+    local -- linenum="${BASH_LINENO[0]}"
+    error_prefixed "[error] [${script_name}:${linenum}]" "${@}"
+}
+error_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${error_prefix_color_rgb}m${prefix}\x1b[1;38;2;${error_color_rgb}m ${message}\x1b[0m"
+}
+info() {
+    local -- linenum="${BASH_LINENO[0]}"
+    info_prefixed "[info]  [${script_name}:${linenum}]" "${@}"
+}
+info_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${info_prefix_color_rgb}m${prefix}\x1b[1;38;2;${info_color_rgb}m ${message}\x1b[0m"
+}
+msg() {
+    local -- linenum="${BASH_LINENO[0]}"
+    msg_prefixed "[msg]  [${script_name}:${linenum}]" "${@}"
+}
+msg_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${msg_prefix_color_rgb}m${prefix}\x1b[1;38;2;${msg_color_rgb}m ${message}\x1b[0m"
+}
+display() {
+    local -- linenum="${BASH_LINENO[0]}"
+    display_prefixed "[display]  [${script_name}:${linenum}]" "${@}"
+}
+display_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${display_prefix_color_rgb}m${prefix}\x1b[1;38;2;${display_color_rgb}m ${message}\x1b[0m"
+}
+debug_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${debug_prefix_color_rgb}m${prefix}\x1b[1;38;2;${debug_color_rgb}m ${message}\x1b[0m"
+}
+debug() {
+    local -- linenum="${BASH_LINENO[0]}"
+    debug_prefixed "[debug] [${script_name}:${linenum}]" "${@}"
+}
+trace() {
+    if [ "$BASH_TRACE" = "" ] && [ "$BASH_LOGLEVEL" != "trace" ]; then
+        return 0
+    fi
+
+    local -- linenum="${BASH_LINENO[0]}"
+    local -- funcname="${FUNCNAME[1]}"
+    debug_prefixed "[${FUNCNAME[0]} ${script_name}::${funcname}:${linenum}]" "${@}"
+}
+
+is_timestamp() {
+    local -- arg="${@}"
+    if [[ "${arg}" =~ ^[0-9]{9,}$ ]]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+process_argv() {
+    repl no echo
+
+    local -i current=0
+    local -i index=0
+    local -- arg=""
+    local -i next_index=0
+    local -- next_arg=""
+    local -i skip_next=0
+    local -i has_next_arg=0
+
+    for index in "${!argv[@]}"; do
+        next_index=$((index + 1))
+        if [ ${next_index} -lt ${argc} ]; then
+            has_next_arg=1
+        else
+            has_next_arg=0
+        fi
+
+        current=${next_index}
+        arg="${argv[$index]}"
+        next_arg="${argv[$current]}"
+        prefix="$(printf '%*s of %f' "${#argc}" "${current}" "${argc}")"
+        if (($skip_next)); then
+            skip_next=0
+            continue
+        fi
+
+        if [ "${script_name}" == "git-commit" ]; then
+            parse_arg_git_commit "${arg}" "${has_next_arg}" "${next_arg}"
+        else
+            parse_arg_custom_git_subcommand "${arg}" "${has_next_arg}" "${next_arg}"
+        fi
+    done
+    repl sane
+}
+declare -a current_caller_frame=()
+declare -A current_caller_info=()
+
+get_caller() {
+    local -a gc_argv=($@)
+    local -i gc_argc=${#gc_argv[@]}
+    local -- raw_printf_format=""
+    local -- printf_format=""
+    local -- raw_caller_index=""
+    if [ ${gc_argc} -eq 0 ]; then
+        1>&2 echo -e "[${FUNCNAME[0]}]" "missing argument <CALLER_INDEX>"
+        return 1
+    fi
+    local -- raw_caller_index="${gc_argv[@]:0:1}"
+    raw_printf_format="${gc_argv[@]:1}"
+    printf_format="${raw_printf_format}"
+
+    if [[ ! "${raw_caller_index}" =~ ^[0-9]+$ ]]; then
+        1>&2 echo -e "[${FUNCNAME[0]}]" "argument <CALLER_INDEX> got invalid non-integer value: ${raw_caller_index@Q}"
+        return 1
+    fi
+    local -i caller_index=$((raw_caller_index + 1))
+    local -- caller_function_name=""
+    local -- caller_line_number=""
+
+    current_caller_frame=()
+    current_caller_info=()
+
+    if [[ -v LINENO[$caller_index] ]]; then
+        caller_line_number="${LINENO[$caller_index]}"
+        current_caller_frame+=("${caller_line_number}")
+
+        current_caller_info["line"]="${caller_line_number}"
+        current_caller_info["lineno"]="${caller_line_number}"
+        current_caller_info["line_number"]="${caller_line_number}"
+    fi
+    if [[ -v FUNCNAME[$caller_index] ]]; then
+        caller_function_name="${FUNCNAME[$caller_index]}"
+        current_caller_frame+=("${caller_function_name}")
+
+        current_caller_info["function"]="${caller_function_name}"
+        current_caller_info["function_name"]="${caller_function_name}"
+        current_caller_info["name"]="${caller_function_name}"
+    else
+        current_caller_info["name"]="${BASH_SOURCE[0]}"
+        current_caller_info["function"]="body of ${BASH_SOURCE[0]}"
+        current_caller_info["function_name"]="body of ${BASH_SOURCE[0]}"
+    fi
+    local -- key="";
+    local -- value="";
+    local -- regex="";
+    for key in ${!current_caller_info[@]}; do
+        regex="[\x24]";
+        value="${current_caller_info["${key}"]}"
+
+    done
+}
+parse_arg_git_commit() {
+    local -a pa_argv=($@)
+    local -i pa_argc=${#pa_argv[@]}
+    local -i index=0
+    local -i current=0
+    local -- arg=""
+
+    if [ ${pa_argc} -lt 2 ]; then
+        error_prefixed "[${script_name} internal error]" "missing arguments \${arg} and \${has_next_arg} in call to ${FUNCNAME[0]} from $(get_caller 1 '%{name} line %{line}')"
+        return 1
+    fi
+
+    local -- arg=""
+    case "${arg}" in
+        --timestamp | --ts)
+            if is_timestamp "${next_arg}"; then
+                if is_timestamp "${git_commit_timestamp}"; then
+                    warn_prefixed "[${script_name} warning]" "overwriting git commit timestamp ${git_commit_timestamp@Q} with argument ${prefix}: ${arg@Q}"
+                fi
+                git_commit_timestamp="${next_arg}"
+                skip_next=1
+
+            elif (($has_next_arg)); then
+                error_prefixed "[${script_name} error in argument ${prefix}]" "${arg} requires next argument to be a unix timestamp, got ${next_arg@Q} instead"
+                exit 1
+            else
+                error_prefixed "[${script_name} error in argument ${prefix}]" "${arg} requires next argument to be a unix timestamp, but there are no more arguments"
+                exit 1
+            fi
+            ;;
+        --timestamp=* | --ts=*)
+            local -- regexp='([-][-](timestamp|ts)=)(.*)'
+            arg=$(sed - -E "s/${regexp}/\1/gp" <<<"${arg}")
+            next_arg=$(sed - -E "s/${regexp}/\2/gp" <<<"${arg}")
+            if is_timestamp "${next_arg}"; then
+                if is_timestamp "${git_commit_timestamp}"; then
+                    warn_prefixed "[${script_name} warning]" "overwriting git commit timestamp ${git_commit_timestamp@Q} with argument ${prefix}: ${arg@Q}"
+                fi
+
+                git_commit_timestamp="${next_arg}"
+                skip_next=1
+
+            else
+                error_prefixed "[${script_name} error in argument ${prefix}]" "${arg} requires a unix timestamp value, got ${next_arg@Q} instead"
+                exit 1
+            fi
+            ;;
+        *)
+            if is_timestamp "${arg}"; then
+                if is_timestamp "${git_commit_timestamp}"; then
+                    warn_prefixed "[${script_name} warning]" "overwriting git commit timestamp ${git_commit_timestamp@Q} with argument ${prefix}: ${arg@Q}"
+                fi
+                git_commit_timestamp="${arg}"
+                continue
+            fi
+            ;;
+    esac
+    git_commit_args+=("${arg}")
+
+}
+main() {
+    if is_timestamp "${git_commit_timestamp}"; then
+        local git_date="$(date --iso-8601=seconds --date=@${git_commit_timestamp})"
+        export GIT_AUTHOR_DATE="${git_date}"
+        export GIT_COMMITTER_DATE="${git_date}"
+    else
+        error_prefixed "[${script_name} missing --timestamp/--ts argument]"
+        exit 1
+    fi
+    debug_prefixed "${git_commit}" ${git_commit_args[@]}
+
+    ${git_commit} ${git_commit_args[@]}
+}
+
+if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
+    if process_argv "${argv[@]}"; then
+        main
+    fi
+else
+    1>&2 echo -e "${BASH_SOURCE[0]} appears to being used as a library by ${0@Q}"
+fi
+repl sane

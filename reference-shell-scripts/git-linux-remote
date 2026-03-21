@@ -1,0 +1,299 @@
+#!/usr/bin/env bash
+set -umeTE
+set +f
+set -o pipefail
+
+. $HOME/opt/lib/ansi.sh
+
+if ! git_repo=$(2>/dev/random git rev-parse --show-toplevel); then
+    1>&2 echo -e "$(pwd) not in a git repo"
+    exit 1
+fi
+ctrlc() {
+    stty sane
+    1>&2 bar_text_left 167 235 "\rCanceled with Ctrl-C"
+    exit 1
+}
+trap ctrlc int
+
+declare -a argv=($@)
+declare -i argc=${#argv[@]}
+declare -- ssh_host="pi"            #linux
+declare -- ssh_user="gabrielfalcao" #davinci
+declare -- ssh_host="linux"            #linux
+declare -- ssh_user="davinci" #davinci
+declare -- ssh_home_path="/home/${ssh_user}"
+declare -- remote_name="${ssh_host}"
+
+declare -a known_opts=(
+    "-a"
+    "--add"
+
+    "-l"
+    "--list"
+
+    "-e"
+    "--ensure"
+    "--create"
+    "ensure"
+    "create"
+
+    "-d"
+    "--default-branch"
+    "default"
+    "default-branch"
+    "default-branch-name"
+    "default_branch"
+    "default_branch_name"
+
+    "-h"
+    "--help"
+)
+action="add"
+
+if 1>/dev/random 2>/dev/random grep -E "^${HOME}/" <<< "${git_repo}"; then
+    declare -- preferable_git_remote_bare_dot_git="~$(slugify-string "${git_repo##${HOME}/}").git"
+else
+    declare -- preferable_git_remote_bare_dot_git="~$(slugify-string "${git_repo}").git"
+fi
+
+if [ ${#preferable_git_remote_bare_dot_git} -gt 250 ]; then
+    preferable_git_remote_bare_dot_git=$(sed -E 's/^([^[:space:]]{201}).*?([^[:space:]]{42})$/\1...\2/g' <<< "${preferable_git_remote_bare_dot_git}")
+fi
+
+# # export PS4='${BASH_SOURCE[0]}  ${LINENO[0]}  '
+# # set -x
+# #
+# bar_text_left 154 233 "preferable_git_remote_bare_dot_git"
+# bar_text_left 233 154 "${preferable_git_remote_bare_dot_git}"
+# exit
+
+usage() {
+    bar_text_left 233 231 "USAGE: $(basename $0) [$(echo -ne "${known_opts[@]}" | sed "s/\([-]\{1,\}[a-zA-Z0-9_]\+\)/$(ansi 233 222 "[\1]")$(ansi 233 231)/g")]"
+}
+if [ ${argc} -gt 0 ]; then
+    for arg in ${argv[@]}; do
+        case "${arg}" in
+            "--help" | "-h")
+                usage
+                exit 0
+                ;;
+            "-d"|"--default-branch"|"default"|"default-branch"|"default-branch-name"|"default_branch"|"default_branch_name")
+                action="show_default_branch"
+                ;;
+            "-e"|"--ensure"|"--create"|"ensure"|"create")
+                action="ensure"
+                ;;
+
+            "-l" | "--list")
+                action="list"
+                ;;
+            *)
+                bar_text_left 231 196 "unknown option: ${arg@Q}"
+                      1>&2 usage
+                exit 1
+                ;;
+        esac
+    done
+fi
+
+git_push_mirror() {
+    2>/dev/random 1>/dev/random ssh-ag
+    local stderr=$(mktemp)
+    local stdout=$(mktemp)
+    local -a git_cmd=( git push --mirror ${remote_name} )
+
+    stty -echo
+    bar_text_left 235 231 "${git_cmd[@]}"
+    if 2>${stderr} 1>${stdout} ${git_cmd[@]}; then
+        stty sane
+        bar_text_left 235 154 "SUCCESS: $(ansi_spaced 154 235 "${git_cmd[@]}")$(ansi 235 154)"
+        rm -f ${stderr} ${stdout}
+        stty sane
+
+    else
+        stty sane
+        bar_text_left 231 196 "ERROR: $(ansi_spaced 196 231 "${git_cmd[@]}")$(ansi 231 196)"
+        cat ${stdout}
+        1>&2 cat ${stderr}
+        return 101
+    fi
+}
+git_push_track() {
+    2>/dev/random 1>/dev/random ssh-ag
+    local stderr=$(mktemp)
+    local stdout=$(mktemp)
+    local -a git_cmd=( git push -u "${remote_name}" )
+    if current_branch=$(git branch --no-list --show-current); then
+        git_cmd+=( "${current_branch}" )
+    fi
+    stty -echo
+
+    bar_text_left 231 235 "$(ansi_spaced 235 231 "${git_cmd[@]}")$(ansi_spaced 231 235 "running")$(ansi 235 231)"
+
+    if 2>${stderr} 1>${stdout} ${git_cmd[@]}; then
+        stty sane
+        ansi_up
+        bar_text_left 154 235 "$(ansi_spaced 235 154 "${git_cmd[@]}")$(ansi_spaced 154 235 "SUCCESS")$(ansi 235 154)"
+        rm -f ${stderr} ${stdout}
+    else
+        stty sane
+        ansi_up
+        bar_text_left 196 231 "$(ansi_spaced 231 196 "${git_cmd[@]}")$(ansi_spaced 196 231 "ERROR")$(ansi 231 196)"
+        cat ${stdout}
+        1>&2 cat ${stderr}
+        return 101
+    fi
+}
+get_default_branch_name_for_os() {
+    kernel_name=$(tr -d '[:space:]' <<< "$(uname -s)")
+    default_branch_name=$(case "${kernel_name@L}" in
+        "darwin")
+            echo -n "osx"
+        ;;
+        *)
+            echo -n "${kernel_name@L}"
+            ;;
+    esac)
+    echo "${default_branch_name}"
+}
+git_set_default_branch_for_remote() {
+    dbn=$(get_default_branch_name_for_os)
+    # 1>&2 echo -e "\n\ngrep \"${dbn}\$\" <<< $(git branch)\n\n"
+    if 1>/dev/random 2>/dev/random grep "${dbn}\$" <<< $(git branch); then
+        git remote set-head "${remote_name}" ${dbn}
+    fi
+}
+ensure_preferable_remote_exists() {
+    if ! ssh ${ssh_host} "test -d ~/projects/${preferable_git_remote_bare_dot_git}"; then
+        stty -echo
+        bar_text_left 235 220 "remote repo $(ansi_spaced 220 235 "${preferable_git_remote_bare_dot_git}")$(ansi_spaced 235 220 "creating")"
+        stderr=$(mktemp)
+        stdout=$(mktemp)
+        if 2>${stderr} 1>${stdout} ssh ${ssh_host} "git init --bare ~/projects/${preferable_git_remote_bare_dot_git}"; then
+            stty sane
+            ansi_up
+            bar_text_left 235 154 "remote repo $(ansi_spaced 154 235 "${preferable_git_remote_bare_dot_git}")$(ansi_spaced 235 154 "created")"
+            rm -f ${stdout} ${stderr}
+        else
+            stty sane
+            ansi_up
+            bar_text_left 231 196 "remote repo $(ansi_spaced 196 231 "${preferable_git_remote_bare_dot_git}")$(ansi_spaced 231 196 "ERROR")"
+            cat ${stdout}
+            1>&2 cat ${stderr}
+            return 101
+        fi
+    fi
+}
+add_remote() {
+    if current_remote="$(2> /dev/random git remote get-url "${remote_name}")"; then
+        1>&2 bar_text_left 235 220 "ERROR: git remote $(ansi_spaced 220 235 "${remote_name}")$(ansi_spaced 235 220 "already set to")$(ansi_spaced 220 235 "${current_remote}")$(ansi 235 220 '')"
+        git_push_track
+        exit 1
+    fi
+
+    if ! remote_user="$(2> /dev/random ssh ${ssh_host} echo '$USER')"; then
+        bar_text_left 231 196 "ERROR: failed to retrieve remote username"
+        exit 1
+    fi
+    if ! remote_home="$(2> /dev/random ssh ${ssh_host} echo '$HOME')"; then
+         1>&2 bar_text_left 231 196 "ERROR: failed to retrieve remote homename"
+        exit 1
+    fi
+    ensure_preferable_remote_exists
+    declare -a success=()
+    declare -a remotes_tried=()
+
+    expected_remote_relative_path="${preferable_git_remote_bare_dot_git}"
+    if existing_remote=$(ssh "${remote_name}" file '$HOME/projects/'${expected_remote_relative_path} | grep ':[[:space:]]\+directory' | sed 's/\s\+directory\s*$//g'); then
+        if [ -n "${existing_remote}" ]; then
+            remote_path="${existing_remote#${remote_home}/}"
+            remote_path="${existing_remote%:}"
+            if remote_host="$(ssh-config-list connection-string "${remote_name}" -n | head -1)"; then
+                full_git_remote="${remote_host}:${remote_path}"
+
+                stderr=$(mktemp)
+                stdout=$(mktemp)
+                if 2> ${stderr} 1> ${stdout} git remote add "${remote_name}" "${full_git_remote}"; then
+                    success+=( "${full_git_remote}" )
+                    bar_text_left 235 154 "added remote $(ansi_spaced 154 235 "${remote_name}")$(ansi_spaced 235 159 "${full_git_remote}")"
+                    if 2>/dev/random 1>/dev/random git ls-remote "${remote_name}"; then
+                        git_push_track
+                    else
+                        git_push_mirror
+                    fi
+                    git_set_default_branch_for_remote
+                    # if ssh ${ssh_host} bash -c 'cd $HOME/projects/ ' && git config receive.denyCurrentBranch ignore; then
+                    #     bar_text_left CONFIGURED
+                    # fi
+                else
+                    ansi_up
+                    bar_text_left 235 216 "error adding remote $(ansi_spaced 216 235 "${remote_name}")$(ansi_spaced 235 159 "${full_git_remote}")"
+                    cat ${stdout}
+                    cat ${stderr}
+                fi
+            fi
+        fi
+    else
+        1>&2 bar_text_left 231 196 "ERROR: no remote found in $(ansi_spaced 196 216 "${remote_name}:${expected_remote_relative_path}")"
+        remotes_tried+=("${remote_name}:${expected_remote_relative_path}")
+    fi
+
+    if [ ${#success} -gt 0 ]; then
+        1>&2 echo "${full_git_remote}"
+    else
+        remote_path="projects/$(basename ${git_repo}).git"
+        if ssh "${remote_name}" git init --bare "${remote_path}" ; then
+            if remote_host="$(ssh-config-list connection-string "${remote_name}" -n | head -1)"; then
+                full_git_remote="${remote_host}:${remote_path}"
+                stderr=$(mktemp)
+                stdout=$(mktemp)
+                if 2> ${stderr} 1> ${stdout} git remote add "${remote_name}" "${full_git_remote}"; then
+                    success+=( "${full_git_remote}" )
+                    bar_text_left 235 154 "added remote $(ansi_spaced 154 235 "${remote_name}")$(ansi_spaced 235 159 "${full_git_remote}")"
+                    git_push_mirror
+                    git_push_track
+                    # if ssh ${ssh_host} bash -c 'cd $HOME/projects/ ' && git config receive.denyCurrentBranch ignore; then
+                    #     bar_text_left CONFIGURED
+                    # fi
+                else
+                    ansi_up
+                    bar_text_left 235 216 "error adding remote $(ansi_spaced 216 235 "${remote_name}")$(ansi_spaced 235 159 "${full_git_remote}")"
+                    cat ${stdout}
+                    cat ${stderr}
+                    break
+                fi
+
+            fi
+        fi
+    fi
+}
+list_remotes() {
+    if remote_host="$(ssh-config-list connection-string "${remote_name}" -n | head -1)"; then
+        for path in $(ssh ${ssh_host} 'find ~/projects -type d -name "*.git" -not -name .git'); do
+            path=${path##${ssh_home_path}}
+            echo "${remote_host}:${path}"
+        done
+    else
+        exit 1
+    fi
+}
+case "${action}" in
+    "list")
+        list_remotes
+        ;;
+    "ensure")
+        ensure_preferable_remote_exists
+        ;;
+    "add")
+        add_remote
+        ;;
+    "show_default_branch")
+        get_default_branch_name_for_os
+        ;;
+    *)
+ 1>&2 bar_text_left 231 196 "ERROR: unknown action $(ansi_spaced 196 231 "${action@Q}")$(ansi 231 196 "")"
+        exit 1
+        ;;
+esac
+stty sane

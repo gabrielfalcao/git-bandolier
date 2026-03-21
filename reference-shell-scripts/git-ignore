@@ -1,0 +1,179 @@
+#!/usr/bin/env bash
+# shellcheck disable=SC2004,SC2206,SC2068,SC2086
+
+set -e
+set -o pipefail
+export IFS=$'\n'
+
+this_script_path="${BASH_SOURCE[0]}"
+script_name="$(basename "${this_script_path}")"
+script_path="$(dirname "${this_script_path}")"
+
+declare -a argv=($@)
+declare argc=${#argv[@]}
+
+declare -a paths_to_ignore=()
+declare -a unrecognized_params=()
+
+declare -i paths_to_ignore_count=0
+declare -i unrecognized_params_count=0
+
+declare dry_run="false"
+declare action=""
+
+error_prefix_color_rgb="$((0xFF));$((0x00));$((0x42))"
+error_color_rgb="$((0xFF));$((0x32));$((0x32))"
+error_color_rgb="$((0xFF));$((0x3E));$((0x5C))"
+warn_prefix_color_rgb="$((0xFF));$((0x6A));$((0x32))"
+warn_color_rgb="$((0xFF));$((0xA1));$((0x32))"
+
+on_exit() {
+    repl sane
+}
+on_ctrlc() {
+    repl no echo
+    1>&2 echo -e "\x1b[1;38;2;${error_color_rgb}m\rAborted with Ctrl-C\x1b[0m"
+    repl sane
+    exit 1
+}
+trap on_exit exit
+trap on_ctrlc hup
+trap on_ctrlc int
+trap on_ctrlc bus
+trap on_ctrlc segv
+trap on_ctrlc sys
+
+repl() {
+    local -a stty_args=()
+    case "$1" in -*no*stdin | no*stdin | -*no*echo | no*echo | capture) args+=('-echo') ;; *) args+=('sane') ;; esac
+    2>/dev/random 1>/dev/random stty ${stty_args[@]}
+}
+usage() {
+    repl no echo
+    1>&2 echo -e "\nUSAGE: \x1b[1;38;5;220m$(basename $0) <ACTION> \x1b[1;38;5;231m<PATH...>\x1b[0m"
+    1>&2 echo -e "     \nACTIONS\n"
+    1>&2 echo -e "       add\tadds given <PATH...> arguments or untracked files to .gitignore"
+    1>&2 echo -e "       list\tlists patterns in .gitignore"
+    1>&2 echo -e ""
+    1>&2 echo -e "     \nOPTIONS\n"
+    1>&2 echo -e "       --dry-run\tshow what paths would be added"
+    1>&2 echo -e ""
+    repl sane
+}
+exit_error() {
+    error "${@}"
+    exit 1
+}
+warn() {
+    1>&2 echo -e "\x1b[1;38;2;${warn_prefix_color_rgb}m[${script_name} warn]\x1b[1;38;2;${warn_color_rgb}m ${@}\x1b[0m"
+}
+error() {
+    1>&2 echo -e "\x1b[1;38;2;${error_prefix_color_rgb}m[${script_name} error]\x1b[1;38;2;${error_color_rgb}m ${@}\x1b[0m"
+}
+declare -a potental_git_ignore_paths=()
+
+process_argv() {
+    repl no echo
+    if ! git_path=$(git rev-parse --show-toplevel); then
+        exit_error "$(pwd) not under git repo"
+    fi
+    potental_git_ignore_paths+=("${git_repo}/.gitignore")
+    potental_git_ignore_paths+=("$(pwd)/.gitignore")
+    for arg in ${argv[@]}; do
+        if [ -e "${arg}" ]; then
+            paths_to_ignore+=("${arg}")
+        else
+            case "${arg@L}" in
+                -*dry-run | -*dryrun | none)
+                    dry_run="true"
+                    action="none"
+                    ;;
+                add)
+                    action="add"
+                    ;;
+                list)
+                    action="list"
+                    ;;
+                *)
+                    unrecognized_params+=("${arg}")
+                    ;;
+            esac
+        fi
+    done
+    if [ ${#paths_to_ignore[@]} -eq 0 ]; then
+        paths_to_ignore+=($(git status --porcelain . | ack '^[?]' | sed -n 's/^[?]\{2\}\s\+\(.\+\)$/\1/p'))
+    fi
+    paths_to_ignore_count=${#paths_to_ignore[@]}
+    unrecognized_params_count=${#unrecognized_params[@]}
+    repl sane
+}
+
+main() {
+    if [ ${unrecognized_params_count} -gt 0 ]; then
+        exit_error "unrecognized params: ${unrecognized_params[@]@Q}"
+    fi
+    if [ -z "${action}" ]; then
+        error "missing argument <ACTION>"
+        usage
+        exit 1
+    fi
+    for potignore in ${potental_git_ignore_paths[@]}; do
+        if [ -f "${potignore}" ]; then
+            git_ignore_path="${potignore}"
+            break
+        fi
+    done
+    if [ -z "${git_ignore_path}" ]; then
+        git_ignore_path="$(pwd)/.gitignore"
+        touch ${git_ignore_path}
+    fi
+    export TZ=UTC
+    timestamp="$(date +"%Y/%m/%d %H:%M:%S %Z")"
+    if [ "${dry_run}" == "true" ]; then
+        1>&2 echo -e "\x1b[1;38;2;$((79 + 50));$((83 + 90));$((64 + 50))m${paths_to_ignore_count} paths to ignore\x1b[0m"
+    fi
+    if [ ${paths_to_ignore_count} -gt 0 ]; then
+        for index in ${!paths_to_ignore[@]}; do
+            param="${paths_to_ignore[$index]}"
+            entry="$(echo -e "\n${param}\n")"
+            # ENTRY WITH TIMESTAMP: (TODO: add shopt to `$0 add' `--timestamp')
+            # entry="$(echo -e "\n# added ${param} at ${timestamp}\n${param}\n")"
+            would="\n\`\`\`$(sed -n 's/^//gp' <<<"${entry}" | sed 's/^\(\s*[#].*\)/\\x1b[1;38;5;248m\1\\x1b[0m/g' | sed 's/^\(\s*[^#].*\)/\\x1b[1;38;5;220m\1\\x1b[0m/g')\n\`\`\`"
+            if ! 2>/dev/random 1>/dev/random ack "${param}" "${git_ignore_path}"; then
+                if [ "${dry_run}" == "true" ]; then
+                    1>&2 echo -e "\x1b[0m\x1b[1;38;5;231mwould add:\n\x1b[1;38;5;248m${would}\x1b[0m"
+                else
+                    case "${action}" in
+                        add)
+                            echo -e "${entry}" >>"${git_ignore_path}"
+                            sed '/^$/d' -i "${git_ignore_path}"
+                            echo -e "\x1b[0madded to gitignore: \x1b[1;38;5;220m$(tr -d '\n' <<< "${entry}")\x1b[0m"
+                            # echo -e "added:\n${would}" # ENTRY WITH TIMESTAMP
+                            ;;
+                        list)
+                            declare -a currently_ignored=( $(ack --no-color '^\s*[^#]+' "${git_ignore_path}" ) )
+                            if [ ${#currently_ignored[@]} -gt 0 ]; then
+                                1>&2 echo -e "\x1b[1;38;5;249m# <currently ignored in $(path relative "${git_ignore_path}")>\x1b[0m"
+                                echo -e "$(sed 's/^\(.*\)$/\\x1b[1;38;5;220m\1\\x1b[0m/g' < "${git_ignore_path}")"
+                                1>&2 echo -e "\x1b[1;38;5;249m# </currently ignored in $(path relative "${git_ignore_path}")>\x1b[0m"
+                            fi
+                            ;;
+                        *)
+                            exit_error "unknown action: ${action@Q}"
+                            ;;
+                    esac
+                fi
+            fi
+        done
+    else
+        exit 1
+    fi
+}
+
+if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
+    process_argv ${argv[@]}
+    main
+else
+    1>&2 echo -e "${BASH_SOURCE[0]} appears to being used as a library by ${0@Q}"
+fi
+repl sane

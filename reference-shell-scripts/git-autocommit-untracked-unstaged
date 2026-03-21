@@ -1,0 +1,158 @@
+#!/usr/bin/env bash
+set -x
+set -umeTE
+set +f
+set -o pipefail
+export IFS=$'\n'
+
+export PS4='[pid $$] [line $(printf "%*s" 4 "${BASH_LINENO[0]}")] '
+
+declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -- this_script_path="${script_path}/${script_name}"
+
+declare -a argv=($@)
+declare -i argc=${#argv[@]}
+declare -i index=0
+declare -i current=0
+declare -- arg=""
+
+
+for index in ${!argv[@]}; do
+    current=$(($index + 1))
+    arg="${argv[$index]}"
+    case "${arg}" in
+        *)
+            ;;
+    esac
+done
+
+
+declare -- git_repo_path=""
+declare -i code=0
+declare -- cwd="$(path canon -f .)"
+if ! git_repo_path=$(git rev-parse --show-toplevel); then
+    code=$?
+    if [ ${code} -ne 0 ]; then
+        1>&2 echo -e "[${script_name} error]" "working dir ${cwd@Q} is not inside a git repo"
+        exit 1
+    fi
+fi
+
+declare -a porcelain_lines=($(git status --porcelain))
+
+
+declare -a mutually_exclusive=( "indexed" "untracked" )
+
+
+declare -A available_conditions=()
+available_conditions["indexed"]="^[^?[:space:]]"
+available_conditions["untracked"]="^[?[:space:]]"
+available_conditions["unmodified"]=" "
+available_conditions["modified"]="M"
+
+#  (regular file, symbolic link or submodule)
+available_conditions["type[ -]changed"]="T"
+
+available_conditions["added"]="A"
+available_conditions["deleted"]="D"
+available_conditions["renamed"]="R"
+
+#  (if config option status.renames is set to "copies")
+available_conditions["copied"]="C"
+
+available_conditions["(updated|unmerged|updated[ -]but[ -]unmerged)"]="U"
+
+
+declare -A names_by_staged_status_map=()
+declare -A names_by_unstaged_status_map=()
+declare -A names_by_untracked_status_map=()
+
+export IFS=$'\n'
+declare -a untracked_and_unstaged_names=($(echo "${porcelain_lines[*]}" | grep -E '^[?]' | lastcol | xargs -Ipath bash -c 'declare -r base=$(basename path); echo -e "\n${base}\n";'))
+declare -a untracked_names=($(echo "${porcelain_lines[*]}" | grep -E '^[?]' | lastcol | xargs -Ipath bash -c 'declare -r base=$(basename path); echo -e "\n${base}\n";'))
+
+declare -a sorted_untracked=()
+
+declare -a stat_time_letters=(W Y X)
+declare -- stat_times_fmt="$(for letter in ${stat_time_letters[@]}; do printf '%s: %%%s ' ${letter} ${letter}; done)"
+declare -- stat_times_regexp_start="^\\s*$(for letter in ${stat_time_letters[@]}; do printf '[%s]:\\s*([0-9]{9,})\\s*' ${letter}; done)"
+declare -- stat_times_regexp="${stat_times_regexp_start}\\s+filename:\\s+(.*)\$"
+
+export IFS=$'\n'
+
+1>&2 echo -e "untracked_names=(\n$(printf '\t%s\n' ${untracked_names[@]@Q})\n)" >/dev/random
+echo
+1>&2 echo "${stat_times_regexp@A}"
+echo
+sorted_untracked=($(for name in ${untracked_names[@]}; do
+    file_times=$(echo -e "$(gstat -c "${stat_times_fmt}" "${name}")")
+    printf '%s %s\n' "${file_times}" "filename: ${name}"
+                    done | sort -n | grep -E "${stat_times_regexp}"))
+
+export IFS=$'\n'
+
+# posix script
+declare -a sed_replacement_shell_command_lines=(
+    'export GIT_COMMITER_DATE=\$(date --iso-8601=seconds --date=@\2)'
+    'export GIT_AUTHOR_DATE=\$(date --iso-8601=seconds --date=@\1)'
+    'git add -f "\4"'
+    'git commit "\4" -m "\4 created \1 changed \2"'
+)
+declare -a sed_replacement_lines=()
+sed_replacement_lines=($(printf '%s;' ${sed_replacement_shell_command_lines[@]}))
+
+declare -- bash_command_arg=""
+bash_command_arg="echo;${sed_replacement_lines[@]};echo;"
+bash_command_arg="${bash_command_arg//;;/;}"
+bash_command_arg="${bash_command_arg%%;}"
+bash_command_arg="${bash_command_arg##;};"
+declare -- sed_replacement="bash -c ${bash_command_arg@Q}"
+declare -- sed_command="s/${stat_times_regexp}/${sed_replacement}/ge"
+
+1>&2 echo "<expression>"
+1>&2 echo "${sed_command}"
+1>&2 echo "</expression>"
+
+1>&2 echo -e "\n\n"
+
+
+declare -i total=${#sorted_untracked[@]}
+
+1>&2 echo "<\${sorted_untracked}>"
+1>&2 echo "<\${sorted_untracked}>"
+for index in ${!sorted_untracked[@]}; do
+    current=$(($index + 1))
+    pos="$(printf '%*s of %s' ${#total} ${current} ${total})"
+    line="${sorted_untracked[${index}]}"
+
+    1>&2 echo "    <line pos=\"${pos}\">"
+    1>&2 echo "        ${line}"
+    1>&2 echo "    </line pos=\"${pos}\">"
+    continue
+    ##
+    #    ## echo -e "\n"
+    #    ## echo "line=${line@Q}"
+    #    ## echo -e "\n"
+    ##
+    #    ## echo -e "\n"
+    #    ## echo "bash_command_arg=${bash_command_arg@Q}"
+    #    ## echo -e "\n"
+    ##
+    #    ## echo -e "\n"
+    #    ## echo "sed_command=${sed_command}"
+    #    ## echo -e "\n"
+    ##
+    #    #echo -e "\n"
+    #    #sed -n -E "${sed_command}" <<< "${line}"
+    #    #echo -e "\n"
+    ##
+    #    ## if commit_command=$(echo "${line}" | sed -n -E "${sed_command}"); then
+    #    ##     echo -e "${commit_command}"
+    #    ##     echo
+    #    ##     echo
+    #    ## fi
+done
+1>&2 echo "</\${sorted_untracked}>"
+
+echo

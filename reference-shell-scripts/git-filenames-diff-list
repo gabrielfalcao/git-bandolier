@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+set -e
+git diff $@ | grep '^[+-]\{3\}[[:space:]]' | sed 's/^[+-]\{3\}\s[ab]\///g' | sort -u

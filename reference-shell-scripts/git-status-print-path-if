@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+
+export IFS=$'\n'
+set -umeTE
+set +f
+set -o pipefail
+unset IFS
+
+declare -r git_install_path=$(path canon /opt/homebrew/opt/git)
+declare -r git_libexec_path="${git_install_path}/libexec"
+declare -r git_core_libexec="${git_libexec_path}/git-core"
+declare -r git_opath_status="${git_core_libexec}/git-status"
+
+script_name="$(basename "${BASH_SOURCE[0]}")"
+script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+this_script_path="${script_path}/${script_name}"
+
+declare -a argv=( $@ )
+declare -i argc=${#argv[@]}
+
+declare -i index=0
+declare -i current=0
+declare -- arg=""
+declare -- status=""
+declare -- regexp_part=""
+declare -- mut=""
+declare -- chosen=""
+declare -i chosen_index=0
+declare -i chosen_pos=0
+
+declare -a regex_status=()
+declare -A chosen_conditions=()
+declare -A chosen_regexes=()
+declare -a mutually_exclusive=( "indexed" "untracked" )
+declare -A available_conditions=(
+    ["indexed"]="^[^?[:space:]]"
+    ["untracked"]="^[?[:space:]]"
+    ["unmodified"]=" "
+    ["modified"]="M"
+    ["type[ -]changed"]="T" #  (regular file, symbolic link or submodule)
+    ["added"]="A"
+    ["deleted"]="D"
+    ["renamed"]="R"
+    ["copied"]="C" #  (if config option status.renames is set to "copies")
+    ["(updated|unmerged|updated[ -]but[ -]unmerged)"]="U"
+)
+
+if ! git_repo_path=$(git rev-parse --show-toplevel); then
+    1>&2 echo "not a git repo dir: ${current_working_path@Q}"
+    exit 1
+fi
+
+
+is_mutually_exclusive() {
+    local -- choice="$1"
+    for mut in ${mutually_exclusive[@]}; do
+        if [ "${choice}" == "${mut}" ]; then
+            return 0
+        fi
+    done
+    return 1
+}
+mutually_exclusive_already_chosen() {
+    for mut in ${mutually_exclusive[@]}; do
+        if [[ -v chosen_conditions["${mut}"] ]]; then
+            echo "${mut}"
+            return 0
+        fi
+    done
+    return 1
+}
+choice_is_valid() {
+    local -- choice="${1}"
+    if [[ ! -v available_conditions["${choice}"] ]]; then
+        error_prefixed "[error in arg ${current}/${argc}]" "invalid status ${choice@Q}\nvalid choices are:\n$(printf '\t%s\n' "${!available_conditions[@]}")"
+        exit 1
+    fi
+    for chosen in ${!chosen_conditions[@]}; do
+        chosen_index=${chosen_conditions["${chosen}"]}
+        chosen_pos=$(( ${chosen_index} + 1 ))
+        if [ "${choice}" == "${chosen}" ]; then
+            error_prefixed "[error in arg ${current}/${argc}]" "${choice} already chosen in argument ${chosen_pos}/${argc}"
+            exit 1
+        elif is_mutually_exclusive "${choice}" && mut=$(mutually_exclusive_already_chosen); then
+            chosen_index=${chosen_conditions["${mut}"]}
+            chosen_pos=$(( ${chosen_index} + 1 ))
+            error_prefixed "[error in arg ${current}/${argc}]" "${choice} cannot be chosen because ${mut} has been chosen in argument ${chosen_pos}/${argc}"
+            exit 1
+        fi
+    done
+
+}
+for index in ${!argv[@]}; do
+    current=$((${index} + 1))
+    arg="${argv["${index}"]}"
+    case "${arg@U}" in
+
+        "M")
+            choice="modified"
+            ;;
+        "T")
+            choice="type-changed"
+            ;;
+        "A")
+            choice="added"
+            ;;
+        "D")
+            choice="deleted"
+            ;;
+        "R")
+            choice="renamed"
+            ;;
+        "C")
+            choice="copied"
+            ;;
+        "U")
+            choice="unmerged"
+            ;;
+        *)
+            choice=$(sed -E 's/^\s*file[[:space:]-]//g' <<< "${arg}" | sed -E 's/[-]+/-/g' | sed -E 's/\s+/ /g')
+            ;;
+    esac
+    if choice_is_valid "${choice}"; then
+        chosen_conditions+=(["${choice}"]="${index}")
+        regexp_part=${available_conditions["${choice}"]}
+        chosen_regexes+=(["${choice}"]="${regexp_part}")
+    fi
+done
+
+for mut in ${mutually_exclusive[@]}; do
+    if [[ -v chosen_regexes["${mut}"] ]]; then
+        regexp_part=${available_conditions["${mut}"]}
+        regex_status+=("${regexp_part}")
+        unset chosen_regexes["${mut}"]
+    fi
+done
+
+if [ ${#chosen_regexes[@]} -gt 0 ]; then
+    regexp_end="[$(printf '%s' "${chosen_regexes[@]}")]"
+else
+    regexp_end=""
+fi
+if [ ${#regex_status[@]} -eq 0 ]; then
+    regexp_start="^[?[:space:]$(printf '%s' "${chosen_regexes[@]}")]?"
+else
+    regexp_start="$(printf '%s|' "${regex_status[@]}" | sed -E 's/[|]\s*$//g')"
+fi
+regexp="${regexp_start}${regexp_end}"
+
+if ! porcelain=$(git status --porcelain) || [ -z "${porcelain}" ]; then
+    1>&2 echo -e "no changes"
+    exit 1
+fi
+# set -x
+# debug_prefixed "regex_status" "$(sed -E 's/^declare[^=]+=//g' <<< "${regex_status[@]}")"
+# debug_prefixed "regexp" "$(sed -E 's/^declare[^=]+=//g' <<< "${regexp[@]}")"
+# debug_prefixed "chosen_conditions" "$(sed -E 's/^declare[^=]+=//g' <<< "${chosen_conditions[@]@A}")"
+# debug_prefixed "chosen_regexes" "$(sed -E 's/^declare[^=]+=//g' <<< "${chosen_regexes[@]@A}")"
+
+git status --porcelain | awk "/${regexp}/{print \$2; matches+=1}; END{ if (matches == 0) {exit 1}}"

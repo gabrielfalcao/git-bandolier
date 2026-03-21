@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+set -umeTE
+set +f
+set -o pipefail
+unset IFS
+export IFS=$'\n'
+
+# git branch --format="$(printf '%s\n' 'name=%(refname:lstrip=2)')$(printf '%s\n' $(for val in ${git_branch_format_fields[@]}; do echo "${val}=%(${val})"; done))"
+git branch --format="$(printf '%s\n' 'name=%(refname:lstrip=2)')$(printf '%s\n' $(for val in ${git_branch_format_fields[@]}; do echo "${val}=%(${val})"; done))"

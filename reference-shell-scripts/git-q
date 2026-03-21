@@ -1,0 +1,169 @@
+#!/usr/bin/env bash
+
+set -umeTE
+set +f
+set -o pipefail
+unset IFS
+export IFS=$'\n'
+
+declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -- this_script_path="${script_path}/${script_name}"
+
+on_exit() {
+    set +x
+    1>/dev/null 2>/dev/null stty sane
+}
+on_ctrlc() {
+    1>&2 echo -e "\x1b[1;38;2;253;67;83m\rAborted with Ctrl-C\x1b[0m"
+    exit 130
+}
+trap on_exit exit
+trap on_ctrlc hup
+trap on_ctrlc int
+trap on_ctrlc bus
+trap on_ctrlc segv
+trap on_ctrlc sys
+
+cls() {
+    1>&2 echo -en "\x1b[2J\x1b[3J\x1b[H"
+}
+declare -a argv=(${@})
+declare -i argc=${#argv[@]}
+
+declare -a stdin_lines=()
+declare -i stdin_line_count=0
+
+# has_params "boolean flag" - .i.e.:  "(( ${has_params} ))"
+#
+# "false' if the sum of ${argc} + ${stdin_line_count} is 0
+# otherwise, otherwise 1 (or any positive integer: true)
+declare -i has_params=$((argc))
+has_params=$((argc + stdin_line_count))
+
+declare -i current=0
+declare -i index=0
+declare -- arg=''
+declare -- argument=''
+declare -- field=''
+declare -- filename=''
+declare -- key=''
+declare -- name=''
+declare -- param=''
+declare -- path=''
+declare -- value=''
+declare -- item=''
+
+declare -i ts_created=0
+declare -i ts_modified=0
+declare -i code=0
+
+declare -- stderr="$(mktemp)"
+
+declare -- git_repo_path=""
+if git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
+    code=0
+else
+    code=$?
+    exit ${code}
+fi
+
+# cls
+declare -gr sed_regexp='^([?][?]|[?][[:space:]])\s+(([0-9A-Z_a-z./-]+.*?)[.](log|pem|json|txt|sh|std(out|err)([.][a-zA-Z0-9]+)?))$'
+declare -gr sed_to_string='[subexp 0] => \0\n[subexp 1] => \1\n[subexp 2] => \2\n[subexp 3] => \3\n[subexp 4] => \4\n'
+declare -gr sed_command="s,${sed_regexp},${sed_to_string},g; t success q1; :success p"
+
+#########################################################################################
+##### ############################################################################# #####
+##### ###                                                                      #### #####
+##### ### DEBUG                                                                #### #####
+##### ###                                                                      #### #####
+##### 1>&2 echo -en "\x1b[0m\x1b[1;38;5;202m"                                  #### #####
+##### 1>&2 declare -p ${!sed_*}                                                #### #####
+##### 1>&2 echo -en "\x1b[0m\n\x1b[1;38;5;222m"                                #### #####
+##### 2>&1 echo -n "$(git status --porcelain  | sed -E -n "${sed_command}")"   #### #####
+##### 1>&2 echo -en "\n\x1b[0m\n" #####                                        #### #####
+#####                                                                          #### #####
+##### # [subexp 0] => ?? www.gnu.org-invalid-cert/R12.pem                      #### #####
+##### # [subexp 1] => ??                                                       #### #####
+##### # [subexp 2] => www.gnu.org-invalid-cert/R12.pem                         #### #####
+##### # [subexp 3] => www.gnu.org-invalid-cert/R12                             #### #####
+##### # [subexp 4] => pem                                                      #### #####
+#####                                                                          #### #####
+##### # exit 11                                                                #### #####
+#####                                                                          #### #####
+##### ###                                                                      #### #####
+##### ### DEBUG                                                                #### #####
+##### ###                                                                      #### #####
+##### ############################################################################# #####
+#########################################################################################
+
+declare -ga files_to_git_add=()
+files_to_git_add=(
+    # $(git status --porcelain | gawk '{ print $NF }')
+    # $(git status --porcelain  | sed -E -n "${sed_command}" | xargs -Ieachpath echo "${git_repo_path}/eachpath")
+    $(git status --porcelain  | gawk '{ print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
+)
+files_to_git_remove=(
+    $(git status --porcelain  | gawk '($0 ~ /^([D[:space:]]{2})\s*(.*)/) { print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
+)
+declare -g extension=''
+declare -g ext=''
+declare -g base=''
+declare -g parent=''
+declare -g relative_path=''
+
+
+# declare -p files_to_git_add
+# exit
+# cls
+
+# 1>&2 declare -p files_to_git_add
+for index in ${!files_to_git_remove[@]}; do
+    path=${files_to_git_remove[${index}]}
+    # relative_path="${path##${git_repo_path}/}"
+    git rm --cached -rf "${path}";
+    git rm -rf "${path}";
+    git commit "${path}" -m "${path##${git_repo_path}/}"
+done
+
+for index in ${!files_to_git_add[@]}; do
+    path=${files_to_git_add[${index}]}
+
+    if [ -z "${path}" ]; then
+        1>&2 echo -e "empty path at index ${index}"
+        continue
+    elif [ ! -e "${path}" ]; then
+        # 1>&2 echo -en "\x1b[0m\x1b[1;38;2;239;41;41m"
+        # 1>&2 declare -p path
+        # 1>&2 echo -en "\x1b[0m"
+        continue
+    fi
+
+    name="$(path name "${path}")"
+    parent="$(path parent "${path}")"
+    base=$(path base -p "${name}")
+    extension=$(path extension -p "${name}" | sed -E 's/^[.]//g')
+    ext=${extension##.}
+    ts_created=$(gstat -c '%W' "${path}")
+    ts_modified=$(gstat -c '%Y' "${path}")
+    export GIT_AUTHOR_DATE="$(date --date=@${ts_created} +'%s %z')"
+    export GIT_COMMITTER_DATE="$(date --date=@${ts_modified} +'%s %z')"
+
+    # 1>&2 echo -en "\x1b[0m\x1b[1;38;2;138;226;52m"
+    # 1>&2 declare -p path name parent base extension ext ts_created ts_modified GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+    # 1>&2 echo -en "\x1b[0m"
+
+    # if [ -z "${extension}" ]; then
+    #     continue
+    # fi
+
+    # 1>&2 echo -en "\x1b[0m\x1b[1;48;5;237m\x1b[1;38;5;222m"
+    # 1>&2 declare -p path parent name base extension ext ts_created ts_modified GIT_AUTHOR_DATE GIT_COMMITTER_DATE
+    # 1>&2 echo -en "\x1b[0m"
+    # echo
+    # echo "git add $'\x22'${name}$'\x22' && git commit $'\x22'${name}$'\x22' -m $'\x22'[log] ${name}$'\x22'"
+    # echo -e "\n\n"
+    git add -f "${path}" && git commit "${path}" -m "${path##${git_repo_path}/}"
+
+done

@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+git checkout ${head} -- ${source_filename}
+git reset --hard ${head}
+git cat-file blob $(git ls-tree ${next_commit} source.txt | awk '{print $3}') >${next_commit_target_path}
+git checkout ${commit} -- ${source_filename}
+git diff --no-index --color=auto ${target_path} ${next_commit_target_path} >${target_git_diff_filename}
+git diff --no-index --color=always ${target_path} ${next_commit_target_path} >${target_git_diff_filename/.diff/.diff.color}
+git cat-file blob $(git ls-tree ${head} source.txt | awk '{print $3}') >${head_target_path}
+git checkout ${commit} -- ${source_filename}
+git diff --no-index --color=auto ${target_path} ${head_target_path} >${target_git_diff_filename}
+git diff --no-index --color=always ${target_path} ${head_target_path} >${target_git_diff_filename/.diff/.diff.color}
+git reset --hard ${head}

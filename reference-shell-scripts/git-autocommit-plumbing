@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+. ${HOME}/opt/lib/ansi.sh
+
+set -e
+
+declare -a argv=( $@ )
+declare argc=${#argv[@]}
+
+current_working_path=""
+
+if [ ${argc} -gt 0 ]; then
+    for index in ${!argv[@]}; do
+        cur=$(( $index + 1 ))
+        arg=${argv[$index]}
+        if [ ! -e "${arg}" ]; then
+            1>&2 echo "WARNING: argument ${cur} is not an existing path: ${arg@Q}"
+            continue
+        elif [ ! -d "${arg}" ]; then
+            1>&2 echo "WARNING: argument ${cur} is not an existing directory: ${arg@Q}"
+            continue
+        else
+            if [ -n "${current_working_path}" ]; then
+                1>&2 echo "WARNING: cannot accept argument ${cur} ${arg@Q} because current_working_path already set to ${current_working_path@Q}"
+                continue
+            else
+                current_working_path="${arg}"
+            fi
+        fi
+    done
+else
+    current_working_path=$(pwd)
+fi
+
+cd "${current_working_path}"
+
+if ! git_repo_path=$(git rev-parse --show-toplevel); then
+    1>&2 echo "not a git repo dir: ${current_working_path@Q}"
+    exit 1
+fi
+
+declare -a plumbing_paths_to_commit=()
+
+cd "${git_repo_path}"
+for path in $(git status --porcelain | lastcol); do
+    case "$(basename "${path}")" in
+        ".gitignore"|".rustfmt.toml"|"Cargo.toml"|"rust-toolchain.toml"|".cspell.json"|"Cargo.lock"|"Makefile"|README.*)
+            # 1>&2 echo -e "\x1b[1;38;5;238m# ignore \x1b[1;38;5;168m${path@Q}\x1b[0m"
+	    plumbing_paths_to_commit+=( "${path}" )
+            ;;
+        */errors.rs)
+            1>&2 echo -e "\x1b[1;38;5;238m# ignore \x1b[1;38;5;168m${path@Q}\x1b[0m"
+	    # plumbing_paths_to_commit+=( "${path}" )
+            ;;
+        *)
+            ;;
+    esac
+done
+
+if [ ${#plumbing_paths_to_commit[@]} -gt 0 ]; then
+    bar_text_left 233 220 "found ${#plumbing_paths_to_commit[@]} plumbing files pending commit in$(ansi_spaced 220 233 "${git_repo_path}")$(ansi 233 220 "")"
+    git commit ${plumbing_paths_to_commit[@]} -m "plumbing"
+else
+    bar_text_left 233 202 "skipping $(ansi_spaced 202 233 "${git_repo_path}")$(ansi_spaced 233 202 "no plumbing files pending commit")"
+fi

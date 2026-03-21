@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+name=$(slugify-string $(basename $(pwd)))
+git init
+git branch -M ${name}
+git add .

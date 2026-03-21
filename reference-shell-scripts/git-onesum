@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+set -umeTE
+set +f
+set -o pipefail
+unset IFS
+export IFS=$'\n'
+
+declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -- this_script_path="${script_path}/${script_name}"
+declare -- stderr=$(mktemp)
+
+on_exit() {
+    set +x
+    bash -c "exec 1>/dev/null 2>/dev/null
+     rm -f ${stderr@Q} &
+     disown -a"
+}
+on_ctrlc() {
+    1>&2 echo -e "\x1b[1;38;2;253;67;83m\rAborted with Ctrl-C\x1b[0m"
+    exit 130
+}
+trap on_exit exit
+trap on_ctrlc hup
+trap on_ctrlc int
+trap on_ctrlc bus
+trap on_ctrlc segv
+trap on_ctrlc sys
+
+declare -a argv=(${@})
+declare -i argc=${#argv[@]}
+declare -i code=0
+declare -- git_repo_path=""
+
+if git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
+    code=0
+else
+    code=$?
+fi
+
+if [ ${code} -ne 0 ]; then
+    1>&2 echo -en "[${script_name} error]" "$(pwd) is not under git repo"
+    if [ -s "${stderr}" ]; then
+        1>&2 echo -e ": $(cat "${stderr}")"
+    else
+        1>&2 echo
+    fi
+    exit ${code}
+fi
+
+declare -i index=0
+declare -i current=0
+declare -- arg=""
+declare -- pos=""
+
+if [ ${argc} -eq 0 ]; then
+    1>&2 echo -e "[${script_name} error]" "missing argument: <PATH>"
+    exit 1
+fi
+
+declare -A string_chunk_command_map=()
+declare -a string_chunk_commands=()
+register_string_chunk_command() {
+    local -a param_argv=($@)
+    local -i param_argc=${#param_argv[@]}
+    local -i index=0
+    local -i current=0
+    local -- arg=""
+    local -- pos=""
+    local -- command_label=""
+    local -- shell_command_string=""
+
+    if [ ${param_argc} -eq 0 ]; then
+        1>&2 echo -e "[${FUNCNAME[0]} error]" "missing params: <COMMAND_LABEL> <SHELL_COMMAND_STRING>"
+        return 1
+    elif [ ${param_argc} -lt 2 ]; then
+        1>&2 echo -e "[${FUNCNAME[0]} error]" "takes at least 2 params: <COMMAND_LABEL> <SHELL_COMMAND_STRING> [SHELL_COMMAND_STRING...]"
+        return 1
+    fi
+    local -- command_label="${param_argv[@]:0:1}"
+    local -- shell_command_string="${param_argv[@]:1}"
+
+    if [[ "${param_argv[@]:0:1}" =~ ^([a-zA-Z_-]+)(([a-zA-Z0-9_:,.@/(){}-]|[[]|[]])*)$ ]]; then
+        command_label=${BASH_REMATCH[0]}
+    else
+        1>&2 echo -e "[${FUNCNAME[0]} error]" "invalid COMMAND_LABEL ${command_label@Q}"
+        return 1
+    fi
+    if [[ ! -v string_chunk_command_map["${command_label}"] ]]; then
+        string_chunk_command_map["${command_label}"]="${shell_command_string}"
+        string_chunk_commands+=("${command_label}")
+    else
+        1>&2 echo -e "[${FUNCNAME[0]} error]" "command ${command_label@Q} already registered"
+        return 1
+    fi
+}
+
+# git branch --format="$(printf '%s\n' 'name=%(refname:lstrip=2)')$(printf '%s\n' $(for val in ${git_branch_format_fields[@]}; do echo "${val}=%(${val})"; done))"
+register_string_chunk_command "$(git branch --show-current | sed -E 's/[^a-zA-Z0-9_]+/_/g')@HEAD" 'git log -1 --format=%h'
+
+for index in ${!argv[@]}; do
+    current=$(($index + 1))
+    arg="${argv[$index]}"
+    pos="$(printf '%*s of %s' ${#argc} ${current} ${argc})"
+
+    if [ -e "${arg}" ]; then
+        if register_string_chunk_command "sha1sum:$(heck-string --to=snake "${arg}")" "sha1sum ${arg@Q} | gawk '{ print(substr(\$1, 0, 12)) }'"; then
+            code=0
+        else
+            code=$?
+        fi
+        if [ ${code} -ne 0 ]; then
+            exit ${code}
+        fi
+    else
+        1>&2 echo -e "[${FUNCNAME[0]} error]" "unexpected arg ${pos}: ${arg@Q}"
+        exit 1
+    fi
+done
+
+# declare -A string_chunk_command_map=()
+# declare -a string_chunk_commands=()
+declare -- command_result=""
+declare -- string_chunk=""
+declare -- chunk=""
+declare -a command_call_pipes=()
+declare -a command_call_args=()
+declare -a result_chunks=()
+1>&2 echo -en "\x1b[2J\x1b[3J\x1b[H"
+for command_label in ${string_chunk_commands[@]}; do
+    shell_command_string=${string_chunk_command_map["${command_label}"]}
+    command_call_pipes=( $(sed -E 's/\s+[|]\s+/\n/g' <<< "${shell_command_string}") )
+    command_call_args=( bash -c "set -umeTE; set +f; set -o pipefail;$(echo -e "\n")$(export IFS=$'|'; echo "${command_call_pipes[*]}")$(echo -e "\n")" )
+    if chunk=$(2>${stderr} ${command_call_args[@]}); then
+        code=0
+    else
+        code=$?
+    fi
+    if [ ${code} -eq 0 ]; then
+        result_chunks+=("${chunk}")
+        # result_chunks+=("${command_label=}.${chunk}")
+    else
+        1>&2 echo -en "command ${shell_command_string@Q} failed with code ${code}"
+        if [ -s "${stderr}" ]; then
+            1>&2 echo -e ": $(cat "${stderr}")"
+        else
+            1>&2 echo
+        fi
+        exit ${code}
+    fi
+done
+
+export IFS=$'.'
+echo "${result_chunks[*]}"

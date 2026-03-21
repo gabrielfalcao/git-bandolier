@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+## ##P"""""Y## .8888b .8888b dP oo
+## #' .mmm. `# 88   " 88   " 88
+## #  #####  # 88aaa  88aaa  88 dP 88d888b. .d8888b.
+## #  #####  # 88     88     88 88 88'  `88 88ooood8
+## #. `###' .# 88     88     88 88 88    88 88.  ...
+## ##b     d## dP     dP     dP dP dP    dP `88888P'
+## ###########
+##
+
+function git() {
+    1>&2 echo git $@
+    /opt/homebrew/bin/git $@
+}
+
+function derive-or-guess__remote_name_from_possibly_opaque_data() {
+    ansistrip | sed 's/[^a-zA-Z0-9_.-]/-/g' | lastcol | sed 's/[^a-zA-Z0-9_-]/-/g' | tr -d '[:space:]' | sed 's/^[-]*//g' | sed 's/[-]*$//g'
+}
+function err() {
+    1>&2 echo -e -- "\x1b[1;38;5;196mERROR: \x1b[1;38;5;220m${@}\x1b[0m"
+    exit 27
+}
+
+if [ -n "$@" ]; then
+    bs="$(g o -ns -- "${@}" | derive-or-guess__remote_name_from_possibly_opaque_data)"
+else
+    bs="$(basename $(pwd) | derive-or-guess__remote_name_from_possibly_opaque_data)"
+fi
+fallback=$(pwd | sed "s,${HOME}/,,g" | derive-or-guess__remote_name_from_possibly_opaque_data)
+if [ -z "$bs" ]; then
+    bs="${fallback}"
+fi
+
+name=$(g o -nse -- "${bs}" | derive-or-guess__remote_name_from_possibly_opaque_data)
+if [ $? -ne 0 ] || [ -z "${name}" ]; then
+    err "please provide a name for the local git-remote"
+fi
+
+VERSION_CONTROL_PATH="$(pwd)/.git"
+if [ ! -e "${VERSION_CONTROL_PATH}" ]; then
+    err "this command MUST only be executed at the root-level of a non-bare git-repo"
+fi
+
+set -e
+
+local_offline_path="${HOME}/projects/.gitrepos/${name}.git"
+if [ ! -e "${local_offline_path}" ]; then
+    git init --bare "${local_offline_path}"
+fi
+
+fallback_remote_name=$(g o -n -- "${bs}" | derive-or-guess__remote_name_from_possibly_opaque_data)
+if [ -z "${fallback_remote_name}" ]; then
+    err "could not derive-or-guess remote name from '${bs}'"
+fi
+
+
+
+
+
+remote_name="$(g o -- ${fallback_remote_name} | derive-or-guess__remote_name_from_possibly_opaque_data)"
+remote="file://${local_offline_path}"
+
+if ! 2>/dev/null git remote show -n "${remote_name}"; then
+    git remote rm "${remote_name}" || true
+    git remote add "${remote_name}" "${remote}"
+    git push -u "${remote_name}" || git push -u "${remote_name}" --mirror
+else
+    git remote rm "${fallback_remote_name}" || true
+    git remote add "${fallback_remote_name}" "${remote}"
+    git push -u "${remote}" || git push -u "${remote}" --mirror
+fi

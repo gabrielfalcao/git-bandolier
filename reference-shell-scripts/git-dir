@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -e
+set -o pipefail
+
+cwd="$(pwd)"
+no_comments="false"
+
+case "${@}" in
+    -n | -*no*rel* | -*no*com* | *no*rel* | *no*com* | -q | -*quiet | *quiet | *silen*)
+        no_comments="true"
+        ;;
+    *) ;;
+esac
+
+for arg in ${@}; do
+    case "${arg}" in
+        -n | -*no*rel* | -*no*com* | *no*rel* | *no*com* | -q | -*quiet | *quiet | *silen*)
+            no_comments="true"
+            ;;
+        *) ;;
+    esac
+done
+
+if ! git_repo_path=$(2>/dev/random git rev-parse --show-toplevel); then
+    1>&2 echo "${cwd} is not in a git repository"
+    exit 1
+fi
+
+git_repo_path=$(sed -n "s/^${HOME//\//\\\/}\//~\//gp" <<<"${git_repo_path}")
+cwd=$(sed -n "s/^${HOME//\//\\\/}\//~\//gp" <<<"${cwd}")
+if [ "${cwd}" == "${git_repo_path}" ] || [ "${no_comments}" == "true" ]; then
+    echo "${git_repo_path}"
+else
+    subdir_relative=$(sed -n "s/^${git_repo_path//\//\\\/}\//.\//gp" <<<"${cwd}")
+    echo "${git_repo_path} # ${subdir_relative}"
+fi

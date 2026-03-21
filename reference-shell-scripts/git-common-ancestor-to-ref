@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+set -umeTE
+set +f
+set -o pipefail
+unset IFS
+export IFS=$'\n'
+
+declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -- this_script_path="${script_path}/${script_name}"
+
+if [[ ${#} -eq 0 ]]; then
+    1>&2 echo -e "[${script_name} error]" "missing argument: <REFERENCE>"
+    exit 1
+fi
+
+declare -- current_head=""
+declare -- reference_head=""
+declare -a argv=(${@})
+declare -i argc=${#argv[@]}
+
+declare -i code=0
+
+declare -i index=0
+declare -- arg=''
+
+if ! git_repo_path=$(git rev-parse --show-toplevel); then
+    code=$?
+    if (( $code )); then
+        exit ${code}
+    fi
+fi
+
+
+declare -- current_head=""
+declare -- reference_head=""

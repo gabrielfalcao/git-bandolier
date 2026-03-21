@@ -1,0 +1,394 @@
+#!/usr/bin/env bash
+
+1>&2 echo -en "\x1b[2J\x1b[3J\x1b[H"
+# unset PS1
+# unset PS2
+# unset PS3
+# unset PS4
+# unset PS5
+
+# declare -- trace_file="$(pwd)/trace.$(slugify-string "${0}").log"
+# exec 5>${trace_file}
+# export BASH_XTRACEFD=5
+
+
+export IFS=$'\n'
+set -umeTE
+set +f
+set -o pipefail
+
+script_name="$(basename "${BASH_SOURCE[0]}")"
+script_path="$(2>/dev/random 1>/dev/random cd $(dirname "${BASH_SOURCE[0]}") && pwd)"
+this_script_path="${script_path}/${script_name}"
+
+declare -a argv=($@)
+declare -i argc=${#argv[@]}
+declare -- git_repo_path=""
+declare -i exit_code=0
+declare -- curdir=$(pwd)
+declare -- stderr=$(mktemp)
+declare -- stdout=$(mktemp)
+declare -- commit_message=""
+declare -- proceed=""
+declare -i skip_commit=0
+
+declare -- error_prefix_color_rgb="239;41;41"
+declare -- error_color_rgb="204;0;0"
+
+declare -- achtung_prefix_color_rgb="245;121;0"
+declare -- achtung_color_rgb="206;92;0"
+
+declare -- warn_prefix_color_rgb="252;233;79"
+declare -- warn_color_rgb="237;212;00"
+
+declare -- info_prefix_color_rgb="52;101;164"
+declare -- info_color_rgb="114;159;207;"
+
+declare -- msg_prefix_color_rgb="186;189;182"
+declare -- msg_color_rgb="136;138;133"
+
+declare -- display_prefix_color_rgb="238;238;236"
+declare -- display_color_rgb="211;215;207"
+
+declare -- debug_prefix_color_rgb="138;226;52"
+declare -- debug_color_rgb="115;210;22"
+
+on_exit() {
+    rm -f "${stderr}"
+    2>/dev/random 1>/dev/random stty sane
+}
+abort() {
+    local -i code=1
+    if [[ ${#} -gt 0 ]] && [[ "${1}" =~ ^[0-9]+$ ]]; then
+        code=$1
+    fi
+    local -i linecount=${#BASH_LINENO[@]}
+    1>&2 declare -p FUNCNAME
+    1>&2 declare -p LINENO
+    1>&2 declare -p BASH_SOURCE
+    1>&2 declare -p BASH_LINENO
+    1>&2 echo -e "Aborted with in ${BASH_SOURCE[0]} line ${BASH_LINENO[$(( linecount - 2 ))]}"
+    exit ${code}
+}
+on_ctrlc() {
+    1>&2 echo -e "\x1b[1;38;2;${error_color_rgb}m\rAborted with Ctrl-C\x1b[0m"
+    exit 1
+}
+trap on_exit exit
+trap on_ctrlc hup
+trap on_ctrlc int
+trap on_ctrlc bus
+trap on_ctrlc segv
+trap on_ctrlc sys
+
+repl() {
+    local -a stty_args=()
+    case "$1" in -*no*stdin | no*stdin | -*no*echo | no*echo | capture) args+=('-echo') ;; *) args+=('sane') ;; esac
+    2>/dev/random 1>/dev/random stty ${stty_args[@]}
+}
+usage() {
+    repl no echo
+    1>&2 echo -e "$(basename $0) <ARGUMENT>"
+    repl sane
+}
+exit_error() {
+    error "${@}"
+    exit 1
+}
+
+achtung_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${achtung_prefix_color_rgb}m${prefix}\x1b[1;38;2;${achtung_color_rgb}m ${message}\x1b[0m"
+}
+achtung() {
+    local -- linenum="${BASH_LINENO[0]}"
+    achtung_prefixed "[achtung]  [${script_name}:${linenum}]" "${@}"
+}
+warn_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${warn_prefix_color_rgb}m${prefix}\x1b[1;38;2;${warn_color_rgb}m ${message}\x1b[0m"
+}
+warn() {
+    local -- linenum="${BASH_LINENO[0]}"
+    warn_prefixed "[warn]  [${script_name}:${linenum}]" "${@}"
+}
+error() {
+    local -- linenum="${BASH_LINENO[0]}"
+    error_prefixed "[error] [${script_name}:${linenum}]" "${@}"
+}
+error_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${error_prefix_color_rgb}m${prefix}\x1b[1;38;2;${error_color_rgb}m ${message}\x1b[0m"
+}
+info() {
+    local -- linenum="${BASH_LINENO[0]}"
+    info_prefixed "[info]  [${script_name}:${linenum}]" "${@}"
+}
+info_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${info_prefix_color_rgb}m${prefix}\x1b[1;38;2;${info_color_rgb}m ${message}\x1b[0m"
+}
+msg() {
+    local -- linenum="${BASH_LINENO[0]}"
+    msg_prefixed "[msg]  [${script_name}:${linenum}]" "${@}"
+}
+msg_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${msg_prefix_color_rgb}m${prefix}\x1b[1;38;2;${msg_color_rgb}m ${message}\x1b[0m"
+}
+display() {
+    local -- linenum="${BASH_LINENO[0]}"
+    display_prefixed "[display]  [${script_name}:${linenum}]" "${@}"
+}
+display_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${display_prefix_color_rgb}m${prefix}\x1b[1;38;2;${display_color_rgb}m ${message}\x1b[0m"
+}
+debug_prefixed() {
+    local -- prefix="$1"
+    shift
+    local -- message="$@"
+    1>&2 echo -e "\x1b[1;38;2;${debug_prefix_color_rgb}m${prefix}\x1b[1;38;2;${debug_color_rgb}m ${message}\x1b[0m"
+}
+debug() {
+    local -- linenum="${BASH_LINENO[0]}"
+    debug_prefixed "[debug] [${script_name}:${linenum}]" "${@}"
+}
+trace() {
+    if [ -z "${BASH_TRACE}" ] && [ "${BASH_LOGLEVEL}" != "trace" ]; then
+        return 0
+    fi
+
+    local -- linenum="${BASH_LINENO[0]}"
+    local -- funcname="${FUNCNAME[1]}"
+    debug_prefixed "[${FUNCNAME[0]} ${script_name}::${funcname}:${linenum}]" "${@}"
+}
+
+process_argv() {
+    repl no echo
+    if ! git_repo_path=$(git rev-parse --show-toplevel); then
+        error_prefixed "[${script_name} error]" "${curdir@Q} is not a git repo"
+        exit 1
+    fi
+
+    if [ ${argc} -gt 1 ]; then
+        commit_message="$(printf '%s\n\n' "${argv[@]:0:1}")$(printf '%s\n' "${argv[@]:1}")"
+    elif [ ${argc} -eq 1 ]; then
+        commit_message=$(printf '%s\n' "${argv[@]}")
+    elif 1>${stdout} grep -E "${HOME}/workbench" <<<"${curdir}"; then
+
+        commit_message="saves state of workbench \"$(basename ${curdir})\" at $(gdate --utc +"%H:%M:%S") UTC"
+    else
+        local -- location_type=""
+
+        case "${curdir}" in
+            */projects/**/tool/*)
+                location_type="tool project"
+                ;;
+            */projects/**/sandbox/*)
+                location_type="sandbox \042project\042"
+                ;;
+            */projects/personal/*)
+                location_type="personal project"
+                ;;
+            */projects/third_party/* | */projects/**/3pty/*)
+                location_type="third-party project"
+                ;;
+            */projects/work/*)
+                location_type="work project"
+                ;;
+        esac
+        if [ -n "${location_type}" ]; then
+            location_type=$(echo -e "${location_type}")
+            commit_message="saves state of ${location_type} \"$(basename ${curdir})\" at $(gdate --utc +"%H:%M:%S") UTC"
+        else
+            commit_message="$(t16g)"
+        fi
+    fi
+    repl sane
+}
+declare -A available_conditions=(
+    ["^[^?[:space:]]"]="indexed"
+    ["^[?[:space:]]"]="untracked"
+    ["[[:space:]]"]="unmodified"
+    ["M"]="modified"
+    ["T"]="type-changed" #  (regular file, symbolic link or submodule)
+    ["A"]="added"
+    ["D"]="deleted"
+    ["R"]="renamed"
+    ["C"]="copied" #  (if config option status.renames is set to "copies"]="copied" )
+    ["U"]="updated_unmerged"
+)
+
+main() {
+    # set -x
+    local -a staged_files=()
+    local -a unstaged_files=()
+    local -a untracked_files=()
+    local -A file_status_map=()
+    local -a status_porcelain_lines=()
+    local -- initial_working_dir=$(pwd)
+    local -- initial_relative_dir="."
+    local -- line=''
+    local -i index=0
+    if [[ "${initial_working_dir}" =~ ^${git_repo_path} ]]; then
+        initial_relative_dir="${initial_relative_dir#${HOME}/}"
+    fi
+
+    cd "${git_repo_path}"
+    export IFS=$'\n'
+    status_porcelain_lines=($(git status --porcelain))
+    local -i status_porcelain_line_count=${#status_porcelain_lines[@]};
+    unset IFS;
+
+    local -- staged_status_char=""
+    local -- unstaged_status_char=""
+    local -- untracked_status_char=""
+    local -a status_triple=()
+    local -- status_char_regex='[[:space:]MTADRCU?]'
+    local -i status_field_count=0
+
+    if [ ${status_porcelain_line_count} -lt 1 ]; then
+        1>&2 echo -e "it appears there is nothing to commit"
+        exit 0
+    fi
+    1>&2 echo -e "\x1b[1;38;5;220m"
+    1>&2 declare -p status_porcelain_lines
+    1>&2 echo -e "\x1b[0m"
+
+    local -i sed_failed_cmd_exit_code=0;
+
+    local -i current=0
+    local -- porcelain_line_regex="^(${status_char_regex})(${status_char_regex})\s+(.*)\$"
+
+
+    for index in ${!status_porcelain_lines[@]}; do
+        current=$(( index + 1 ))
+        line="${status_porcelain_lines[${index}]}";
+
+        export IFS=$'\n'
+        local -- sed_command="s/${porcelain_line_regex}/\n\1\n\2\n\3\n/g; t success q${current}; :success {p}"
+        unset IFS
+        1>&2 declare -p sed_command
+        local -a sed_call=( sed -n -E "${sed_command}" )
+        local -a sed_call_display_arr=(
+            $'sed -n -E'
+            # "${sed_command//\"/\\\"}"
+            "${sed_command@Q}"
+            $'\x20\x3c\x3c\x3c\x20'
+            "${line@Q}"
+        )
+        local -- sed_call_display="${sed_call_display_arr[@]}"
+
+        1>&2 echo -en "\x1b[0m\x1b[1;38;5;154m"
+        1>&2 declare -p sed_command # && abort 42
+        # 1>&2 echo -n "${sed_command}"
+        1>&2 echo -e "\x1b[0m"
+        1>&2 echo -en "\x1b[0m"
+
+        1>&2 echo -en "\x1b[0m\x1b[1;38;2;31;31;31m\x1b[1;48;5;222m"
+        1>&2 echo "\${sed_call_display[@]}"
+        1>&2 echo -en "\x1b[0m\x1b[1;38;5;222m"
+        1>&2 echo "${sed_call_display[@]}"
+        1>&2 echo -e "\x1b[0m"
+        1>&2 echo -en "\x1b[0m\x1b[1;38;2;31;31;31m\x1b[1;48;5;222m"
+        1>&2 echo "declare -p status_porcelain_lines"
+        1>&2 echo -en "\x1b[0m\x1b[1;38;5;222m"
+        1>&2 echo "$(declare -p status_porcelain_lines)"
+        1>&2 echo -e "\x1b[0m"
+
+        if ! status_triple=($(sed -n -E "${sed_command}" <<<"${line}")); then
+            exit_code=$?
+        fi
+        if [ ${exit_code} -ne 0 ]; then
+            1>&2 echo "$(echo -en "[${script_name} error]")" "command failed with status ${exit_code}: ${sed_call_display}"
+            return $((status_field_count ^ 1 | status_field_count))
+        fi
+        # TODO: ME
+        status_field_count=${#status_triple[@]}
+        if [ ${status_field_count} -le 1 ]; then
+            1>&2 echo -e "[${script_name} error]" "expected 3 fields from ${line@Q} got ${status_field_count} instead"
+            return $((status_field_count ^ 1 | status_field_count))
+        elif [ ${status_field_count} -gt 3 ]; then
+            1>&2 echo -e "[${script_name} error]" "expected no more than 3 fields from ${line@Q} got ${status_field_count} instead"
+            return $((status_field_count ^ 1 | status_field_count))
+        fi
+        1>&2 echo -en "\x1b[0m\x1b[1;38;5;222m"
+
+        1>&2 declare -p "status_field_count"
+        1>&2 declare -p "status_triple"
+
+        1>&2 echo -e "\x1b[0m"
+
+        # exit 33
+        # # continue
+
+        if [ ${status_field_count} -eq 2 ]; then
+            status_triple=(
+                "${status_triple[0]:0:1}"
+                "${status_triple[0]:1:1}"
+                "${status_triple[0]:2}"
+            )
+        fi
+        staged_status_char="${status_triple[0]}"
+        unstaged_status_char="${status_triple[1]}"
+        untracked_status_char="${status_triple[2]}"
+        1>&2 echo -e "${staged_status_char@A}"
+        1>&2 echo -e "${unstaged_status_char@A}"
+        1>&2 echo -e "${untracked_status_char@A}"
+
+    done
+    # local -p
+    local -a git_cmd=(git commit -am "${commit_message}")
+
+    local -p git_cmd
+
+    # abort 42
+    # local -- result=""
+    # until [ -n "${proceed}" ] && 1>/dev/random grep -E '(y(e[ps])?|no?)' <<< "${proceed}"; do
+    #     read -p "$(echo -e "commit message will be:\n\x1b[1;48;5;220m\x1b[1;38;5;233m${commit_message@Q}\x1b[0m\n\nproceeed? [\x1b[1;38;5;112myes\x1b[0m/\x1b[1;38;5;196mno\x1b[0m]")" proceed
+    # done
+
+    # case "${proceed@L}" in
+    #     yes|yep|y)
+    #         skip_commit=0
+    #         ;;
+    #     no|n)
+    #         exit 1
+    #         ;;
+    # esac
+
+    # if ! 2>${stderr} 1>${stdout} ${git_cmd[@]} "${commit_message}"; then
+    #     exit_code=$?
+    #     error_prefixed "[git error]" "${git_cmd[@]}"
+    #     error_prefixed "[git error]" "$(cat ${stderr})"
+    #     exit ${exit_code}
+    # elif ! result=$(git log -1 --format='commited %H\n\n%B'); then
+    #     exit_code=$?
+    #     warn_prefixed "[git warn]" "git commit succeeded but git log failed with status ${exit_code}"
+    # else
+    #     echo -e "${result}"
+    # fi
+    return 123
+}
+if [ "${0}" == "${BASH_SOURCE[0]}" ]; then
+
+    if process_argv ${argv[@]}; then
+        main
+    fi
+else
+    1>&2 echo -e "${BASH_SOURCE[0]} appears to being used as a library by ${0@Q}"
+fi
+repl sane

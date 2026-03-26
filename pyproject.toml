@@ -1,22 +1,26 @@
 [project]
 name = "git-bandolier"
 version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.10"
 dependencies = [
+    # "click>=8.3.1",
+    # "humanfriendly>=10.0",
+    # "jinja2>=3.1.6",
+    # "requests>=2.33.0",
+    # "tqdm>=4.67.3",
     "click>=8.3.1",
-    "uiclasses>=3.0.0",
+    "humanfriendly>=10.0",
+    "requests>=2.33.0",
+    "tqdm>=4.67.3",
 ]
 
 [dependency-groups]
 dev = [
     "autoflake>=2.3.3",
     "black>=26.3.1",
+    # "ipdb>=0.13.13",
     "flake8>=7.3.0",
+    "ipdb>=0.13.13",
     "isort>=8.0.1",
     "pyflakes>=3.4.0",
-    "pytest>=9.0.2",
-    "ruff>=0.15.7",
-    "sure>=2.0.1",
 ]

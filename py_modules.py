@@ -1,66 +1,46 @@
-import shutil
-import operator
-import subprocess
-import urllib
-import urllib.parse
-import functools
-import itertools
-import collections
-import traceback
-import types
+shutil
+operator
+subprocess
+urllib
+urllib.parse
+functools
+itertools
+collections
+traceback
+types
 
-
-
-import subprocess
-import dataclasses
-import typing
-import collections.abc
-
-import tomllib
-import math
-import argparse
-import asyncio
-import ast
-import abc
-import traceback
-import string
-import termios
-import subprocess
-import json
-import math
-import humanfriendly
-import operator
-import shutil
-import random
-import uiclasses
-import urllib
-import urllib.parse
-import decimal
-import urllib.request
-import dataclasses
-import datetime
-import click
-import codecs
-import builtins
-import sys
-import os
-import re
-import io
-import collections
-import glob
-import fnmatch
-import IPython
-import pathlib
-import inspect
-import functools
-import itertools
-import io
-import os
-import time
-import string
-import struct
-import sys
-import re
-import builtins
-import requests
-import socket
+dataclasses
+typing
+collections.abc
+tomllib
+math
+argparse
+asyncio
+ast
+abc
+string
+termios
+json
+humanfriendly
+random
+uiclasses
+decimal
+urllib.request
+datetime
+click
+codecs
+builtins
+sys
+os
+re
+io
+glob
+fnmatch
+IPython
+pathlib
+inspect
+time
+struct
+requests
+socket
+ipdb

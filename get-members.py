@@ -1,6 +1,12 @@
+import os
+import re
+import io
 import sys
-from inspect import getmembers
+import ipdb
 
+from inspect import getmembers
+from pathlib import Path
+from typing import Any, Dict, List, Optional, Self, T, Tuple, TypeVar, Union
 
 import shutil
 import operator
@@ -13,58 +19,33 @@ import collections
 import traceback
 import types
 
+modules = [
+    shutil,
+    operator,
+    subprocess,
+    urllib,
+    urllib.parse,
+    functools,
+    itertools,
+    collections,
+    traceback,
+    types,
+]
 
 
-import subprocess
-import dataclasses
-import typing
-import collections.abc
+def get_module_members_only(mod: ModuleType) -> Dict[str, Any]:
+    if not isinstance(mod, ModuleType):
+        ty = type(mod)
+        raise TypeError(
+            f"argument `mod' expected {ModuleType} got {ty} {repr(mod)} instead"
+        )
 
-import tomllib
-import math
-import argparse
-import asyncio
-import ast
-import abc
-import traceback
-import string
-import termios
-import subprocess
-import json
-import math
-import humanfriendly
-import operator
-import shutil
-import random
-import uiclasses
-import urllib
-import urllib.parse
-import decimal
-import urllib.request
-import dataclasses
-import datetime
-import click
-import codecs
-import builtins
-import sys
-import os
-import re
-import io
-import collections
-import glob
-import fnmatch
-import IPython
-import pathlib
-import inspect
-import functools
-import itertools
-import io
-import os
-import time
-import string
-import struct
-import sys
-import re
-import builtins
-import requests
-import socket
+    module = mod
+    got_members = getmembers(mod)
+    all_members = list(got_members)
+    members_dunder_module = [m for m in all_members if getattr(m, '__module__', None) == mod]
+    ipdb.set_trace()
+    result = [m for m in all_members if getattr(m, '__module__', None) == mod]
+
+
+get_module_members_only(operator)

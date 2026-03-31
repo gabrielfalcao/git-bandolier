@@ -59,16 +59,38 @@ declare -i ts_modified=0
 declare -i code=0
 
 declare -- stderr="$(mktemp)"
-
+declare -- here="$(pwd)"
 declare -- git_repo_path=""
 if git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
     code=0
 else
     code=$?
+    1>&2 echo -en "[error]" "cannot find git repo path from ${here@Q}"
+    if [ -s "${stderr}" ]; then
+        1>&2 echo -e ":\n"
+        1>&2 cat "${stderr}"
+    fi
+    1>&2 echo -e "."
     exit ${code}
 fi
 
 # cls
+
+if 2>${stderr} cd "${git_repo_path}"; then
+    code=0
+else
+    code=$?
+    1>&2 echo -en "[error]" "cannot change current directory to git repo path ${git_repo_path@Q}"
+    if [ -s "${stderr}" ]; then
+        1>&2 echo -e ":\n"
+        1>&2 cat "${stderr}"
+    fi
+    1>&2 echo -e "."
+    exit ${code}
+
+fi
+
+
 declare -gr sed_regexp='^([?][?]|[?][[:space:]])\s+(([0-9A-Z_a-z./-]+.*?)[.](log|pem|json|txt|sh|std(out|err)([.][a-zA-Z0-9]+)?))$'
 declare -gr sed_to_string='[subexp 0] => \0\n[subexp 1] => \1\n[subexp 2] => \2\n[subexp 3] => \3\n[subexp 4] => \4\n'
 declare -gr sed_command="s,${sed_regexp},${sed_to_string},g; t success q1; :success p"
@@ -102,17 +124,30 @@ declare -ga files_to_git_add=()
 files_to_git_add=(
     # $(git status --porcelain | gawk '{ print $NF }')
     # $(git status --porcelain  | sed -E -n "${sed_command}" | xargs -Ieachpath echo "${git_repo_path}/eachpath")
-    $(git status --porcelain  | gawk '{ print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
+    $(git status --porcelain | grep -E -v '^[?][?]' | gawk '{ print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
 )
+
+if [ ${#files_to_git_add[@]} -eq 0 ]; then
+    files_to_git_add=(
+        $(git status --porcelain | grep -E -v '[?][?]' | gawk '{ print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
+
+    )
+fi
+
+if [ ${#files_to_git_add[@]} -eq 0 ]; then
+    files_to_git_add=(
+        $(git status --porcelain | gawk '{ print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
+    )
+fi
+
 files_to_git_remove=(
-    $(git status --porcelain  | gawk '($0 ~ /^([D[:space:]]{2})\s*(.*)/) { print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
+    $((git status --porcelain | grep -E '^([D]|[[:space:]][D])' ; echo) | gawk '{ print $NF }' | xargs -Ieachpath echo "${git_repo_path}/eachpath")
 )
 declare -g extension=''
 declare -g ext=''
 declare -g base=''
 declare -g parent=''
 declare -g relative_path=''
-
 
 # declare -p files_to_git_add
 # exit
@@ -122,9 +157,9 @@ declare -g relative_path=''
 for index in ${!files_to_git_remove[@]}; do
     path=${files_to_git_remove[${index}]}
     # relative_path="${path##${git_repo_path}/}"
-    git rm --cached -rf "${path}";
-    git rm -rf "${path}";
-    git commit "${path}" -m "${path##${git_repo_path}/}"
+    (cd "${git_repo_path}" && git rm --cached -rf "${path}")
+    # (cd "${git_repo_path}" && git rm -rf "${path}")
+    (cd "${git_repo_path}" && git commit "${path}" -m "${path}")
 done
 
 for index in ${!files_to_git_add[@]}; do
@@ -145,6 +180,8 @@ for index in ${!files_to_git_add[@]}; do
     base=$(path base -p "${name}")
     extension=$(path extension -p "${name}" | sed -E 's/^[.]//g')
     ext=${extension##.}
+
+    # https://git-scm.com/docs/git-commit/2.24.0#Documentation/git-commit.txt-Gitinternalformat
     ts_created=$(gstat -c '%W' "${path}")
     ts_modified=$(gstat -c '%Y' "${path}")
     export GIT_AUTHOR_DATE="$(date --date=@${ts_created} +'%s %z')"

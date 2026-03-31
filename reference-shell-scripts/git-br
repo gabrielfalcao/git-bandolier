@@ -23,6 +23,8 @@ warn_prefix_color_rgb="$((0xFF));$((0x6A));$((0x32))"
 warn_color_rgb="$((0xFF));$((0xA1));$((0x32))"
 
 on_exit() {
+    1>&2 echo -en '\x1b[0m';
+    echo -en '\x1b[0m';
     repl sane
 }
 on_ctrlc() {

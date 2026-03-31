@@ -1,0 +1,168 @@
+#!/usr/bin/env bash
+
+set -umeTE
+set +f
+set -o pipefail
+export IFS=$'\n'
+
+declare -- script_name="$(basename "${BASH_SOURCE[0]}")"
+declare -- script_path="$(2>/dev/random 1>/dev/random cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+declare -- this_script_path="${script_path}/${script_name}"
+
+declare -- ansi_lib_path="${HOME}/.shell.d/x.d/ansi.sh"
+
+### if [ -s "${ansi_lib_path}" ] &&  [ -r "${ansi_lib_path}" ]; then
+###     builtin source "${ansi_lib_path}"
+### fi
+
+builtin source "${ansi_lib_path}"
+
+declare -- full_color_name=''
+declare -- ansi_rgb_triplet=''
+
+for full_color_name in ${shell_d_ansi_truecolor_order_full_color_name[@]}; do
+    # if [[ "${full_color_name}" =~ (yellow|orange|green|)[[:space:]](light|medium) ]]
+    ansi_rgb_triplet=${shell_d_ansi_truecolor_triplet_code_map_by_full_color_name["${full_color_name}"]}
+    echo -e "\x1b[1;38;2;${ansi_rgb_triplet}${full_color_name}\x1b[0m"
+done
+
+# for full_color_name in ${!shell_d_ansi_truecolor_triplet_code_map_by_full_color_name[@]}; do
+#     if [[ "${full_color_name}" =~ (yellow|orange|green|)[[:space:]](light|medium) ]]
+#     ansi_rgb_triplet="${shell_d_ansi_truecolor_triplet_code_map_by_full_color_name["${full_color_name}"]}"
+#     echo -e "\x1b[1;38;2;${ansi_rgb_triplet}${full_color_name}\x1b[0m\n"
+# done
+
+
+exit 2
+
+declare -- stderr=$(mktemp)
+
+on_exit() {
+    set +x
+    bash -c "rm -rf ${stderr@Q} &
+disown -a"
+
+}
+on_ctrlc() {
+    1>&2 echo -e "\x1b[1;38;2;253;67;83m\rAborted with Ctrl-C\x1b[0m"
+    exit 130
+}
+trap on_exit exit
+trap on_ctrlc hup
+trap on_ctrlc int
+trap on_ctrlc bus
+trap on_ctrlc segv
+trap on_ctrlc sys
+
+declare -a argv=(${@})
+declare -i argc=${#argv[@]}
+
+declare -i code=0
+
+declare -i current=0
+declare -- arg=""
+declare -- pos=""
+
+declare -i index=0
+declare -- arg=""
+declare -- param=""
+
+declare -i next_index=0
+declare -- next_arg=""
+declare -- next_param=""
+
+declare -i skip_next=0
+
+declare -i lineno=0
+declare -i line_number=0
+declare -- line=""
+
+declare -- argument=""
+declare -- field=""
+declare -- key=""
+declare -- name=""
+declare -- path=""
+declare -- value=""
+
+if [ ${argc} -eq 0 ]; then
+    1>&2 echo -e "[${script_name} error]" "missing argument: <FILE_TO_COMMIT>"
+    exit 1
+fi
+
+declare -g input_path="${argv[@]:0:1}"
+
+if [ -z "$(tr -d '[:space:]' <<<"${input_path}")" ]; then
+    declare -g input_path="${argv[@]}"
+fi
+
+if [ -z "${input_path}" ]; then
+    1>&2 echo -e "[${script_name} error]" "missing argument: <FILE_TO_COMMIT>"
+    exit 1
+fi
+
+if [ ! -e "${input_path}" ]; then
+    if [ -e "${argv[@]}" ]; then
+        input_path="${argv[@]}"
+    else
+        1>&2 echo -e "[${script_name} error]" "missing argument: <FILE_TO_COMMIT>"
+        exit 1
+    fi
+fi
+
+declare -g parent_dir=$(path parent "${input_path}")
+declare -g initial_cwd=$(pwd)
+declare -g target_path=$(path canon "${input_path}")
+
+if [ "$(pwd)" != "${parent_dir}" ]; then
+    pushd "${parent_dir}"
+fi
+
+declare -g current_cwd=$(pwd)
+
+declare -- git_repo_path=""
+
+if git_repo_path=$(2>${stderr} git rev-parse --show-toplevel); then
+    code=0
+else
+    code=$?
+    1>&2 echo -en "[${script_name} error]" "cannot find git repo path from ${parent_dir@Q}"
+    if [ -s "${stderr}" ]; then
+        1>&2 echo -e ":"
+        1>&2 cat "${stderr}"
+    else
+        1>&2 echo -e "."
+    fi
+    exit ${code}
+fi
+
+[[ "${parent_dir}" =~ ^(${git_repo_path})([/]?.*)$ ]] || true
+
+
+echo
+declare -p BASH_REMATCH
+echo
+
+
+
+
+##
+## if [ "${git_repo_path}"  ]; then
+##     pushd "${parent_dir}"
+## fi
+##
+## echo
+##
+## export IFS=$'\n'
+##
+## declare -gi ts_created=$(gstat -c "%W" "${target_path}")
+## declare -gi ts_modified=$(gstat -c "%Y" "${target_path}")
+##
+## export GIT_AUTHOR_DATE="$(gdate --date=@${ts_created} +'%s %z')"
+## export GIT_COMMITTER_DATE="$(gdate --date=@${ts_modified} +'%s %z')"
+##
+## declare -a git_commit_call_args=(
+##     git commit "${target_path}" -m "$(path canon -f "${target_path}") created at $(gdate --date=@${ts_created} +'%Y/%m/%d %H:%M:%S %Z') modified at $(gdate --date=@${ts_modified} +'%Y/%m/%d %H:%M:%S %Z')"
+## )
+## declare -p GIT_AUTHOR_DATE GIT_COMMITTER_DATE git_commit_call_args
+## echo
+##

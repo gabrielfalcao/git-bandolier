@@ -3,7 +3,7 @@ use iocore::Path;
 
 #[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SwitchSharedOpt {
-    #[arg(default_value = "~/workbench")]
+    #[arg(default_value = "~/git_bandolier")]
     path: Path,
 
 }

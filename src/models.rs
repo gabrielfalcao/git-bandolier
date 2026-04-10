@@ -1,3 +1,4 @@
+#![allow(unused)]
 use chrono::{DateTime, Local, Utc};
 use serde::{Deserialize, Serialize};
 

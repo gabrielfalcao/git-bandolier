@@ -9,15 +9,20 @@ pub use models::Context;
 pub mod cli;
 pub use cli::commands;
 pub use cli::{
-    SwitchCommand,  // SwitchCommand
-    SwitchDirOpt,   // SwitchDirOpt
-    SwitchFileOpt,  // SwitchFileOpt
-    SwitchOpt,      // SwitchOpt
+    CommitDatedCommand,   // CommitDatedCommand
+    CommitDatedDirOpt,    // CommitDatedDirOpt
+    CommitDatedFileOpt,   // CommitDatedFileOpt
+    CommitDatedOpt,       // CommitDatedOpt
+    CommitDatedSharedOpt, // CommitDatedSharedOpt
 
-    WebCommand,      // WebCommand
-    WebDirOpt,       // WebDirOpt
-    WebFileOpt,      // WebFileOpt
-    WebOpt,          // WebOpt
-    WebSharedOpt,    // WebSharedOpt
+    SwitchCommand, // SwitchCommand
+    SwitchDirOpt,  // SwitchDirOpt
+    SwitchFileOpt, // SwitchFileOpt
+    SwitchOpt,     // SwitchOpt
 
+    WebCommand,   // WebCommand
+    WebDirOpt,    // WebDirOpt
+    WebFileOpt,   // WebFileOpt
+    WebOpt,       // WebOpt
+    WebSharedOpt, // WebSharedOpt
 };

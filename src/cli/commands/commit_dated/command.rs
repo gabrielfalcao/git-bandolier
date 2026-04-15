@@ -1,7 +1,9 @@
-use clap::{Args, Subcommand};
+use clap::{Args, Parser, Subcommand};
 
-use crate::cli::commands::commit_dated::{CommitDatedDirOpt, CommitDatedFileOpt};
-use crate::dispatch::{ArgsDispatcher, SubcommandDispatcher};
+use crate::cli::commands::commit_dated::{
+    CommitDatedDirOpt, CommitDatedFileOpt,
+};
+use crate::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 use crate::{Error, Result};
 
 #[derive(Subcommand, Debug, Clone)]
@@ -23,14 +25,13 @@ impl SubcommandDispatcher<Error> for CommitDatedCommand {
     }
 }
 
-
-#[derive(Args, Debug, Clone)]
+#[derive(Parser, Debug, Clone)]
 pub struct CommitDatedOpt {
     #[command(subcommand)]
     command: CommitDatedCommand,
 }
 
-impl ArgsDispatcher<Error> for CommitDatedOpt {
+impl ParserDispatcher<Error> for CommitDatedOpt {
     fn dispatch(&self) -> Result<()> {
         self.command.dispatch()?;
         Ok(())

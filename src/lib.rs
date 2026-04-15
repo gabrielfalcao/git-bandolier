@@ -25,4 +25,10 @@ pub use cli::{
     WebFileOpt,   // WebFileOpt
     WebOpt,       // WebOpt
     WebSharedOpt, // WebSharedOpt
+
+    BranchesCommand, // BranchesCommand
+    BranchesDirOpt,  // BranchesDirOpt
+    BranchesFileOpt, // BranchesFileOpt
+    BranchesOpt,     // BranchesOpt
+
 };

@@ -11,3 +11,9 @@ pub use commit_dated::{
     CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt, CommitDatedOpt,
     CommitDatedSharedOpt,
 };
+
+pub mod branches;
+pub use branches::{
+    BranchesCommand, BranchesDirOpt, BranchesFileOpt, BranchesOpt,
+    BranchesSharedOpt,
+};

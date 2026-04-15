@@ -1,23 +1,23 @@
-use clap::{Args, Parser};
+use clap::Args;
 use iocore::Path;
 
-use crate::cli::commands::commit_dated::shared::CommitDatedSharedOpt;
-use crate::dispatch::{ArgsDispatcher, ParserDispatcher};
+use crate::cli::commands::branches::shared::BranchesSharedOpt;
+use crate::dispatch::ArgsDispatcher;
 use crate::{Error, Result};
 
-#[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CommitDatedDirOpt {
+#[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BranchesDirOpt {
     #[clap(flatten)]
-    opt: CommitDatedSharedOpt,
+    opt: BranchesSharedOpt,
 }
 
-impl CommitDatedDirOpt {
+impl BranchesDirOpt {
     pub fn path(&self) -> Path {
         self.opt.path()
     }
 }
 
-impl ParserDispatcher<Error> for CommitDatedDirOpt {
+impl ArgsDispatcher<Error> for BranchesDirOpt {
     fn dispatch(&self) -> Result<()> {
         let path = self.path();
         println!("path: {path}");
@@ -26,17 +26,17 @@ impl ParserDispatcher<Error> for CommitDatedDirOpt {
 }
 
 #[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct CommitDatedFileOpt {
+pub struct BranchesFileOpt {
     #[clap(flatten)]
-    opt: CommitDatedSharedOpt,
+    opt: BranchesSharedOpt,
 }
-impl CommitDatedFileOpt {
+impl BranchesFileOpt {
     pub fn path(&self) -> Path {
         self.opt.path()
     }
 }
 
-impl ArgsDispatcher<Error> for CommitDatedFileOpt {
+impl ArgsDispatcher<Error> for BranchesFileOpt {
     fn dispatch(&self) -> Result<()> {
         let path = self.path();
         println!("path: {path}");

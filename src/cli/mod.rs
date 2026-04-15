@@ -1,3 +1,4 @@
+#![allow(unused)]
 pub mod commands;
 
 pub use commands::branches::{

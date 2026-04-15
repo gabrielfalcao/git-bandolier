@@ -1,3 +1,4 @@
+#![allow(unused)]
 use clap::Args;
 use iocore::Path;
 

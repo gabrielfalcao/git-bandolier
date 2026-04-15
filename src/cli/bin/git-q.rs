@@ -1,3 +1,4 @@
+#![allow(unused)]
 use clap::{Parser, Subcommand};
 use git_bandolier::cli::commands::{SwitchOpt, WebOpt, CommitDatedOpt};
 use git_bandolier::dispatch::{

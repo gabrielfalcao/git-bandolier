@@ -1,3 +1,4 @@
+#![allow(unused)]
 use clap::{Args, Subcommand};
 
 use crate::cli::commands::web::{WebDirOpt, WebFileOpt};

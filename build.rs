@@ -1,3 +1,4 @@
+#![allow(unused)]
 use iocore::Path;
 use iocore::{Error};
 

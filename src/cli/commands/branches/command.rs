@@ -1,3 +1,4 @@
+#![allow(unused)]
 use clap::{Args, Subcommand, Parser};
 
 use crate::cli::commands::branches::{BranchesDirOpt, BranchesFileOpt};

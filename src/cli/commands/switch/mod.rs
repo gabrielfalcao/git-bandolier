@@ -1,3 +1,4 @@
+#![allow(unused)]
 pub mod opts;
 pub use opts::{SwitchDirOpt, SwitchFileOpt};
 

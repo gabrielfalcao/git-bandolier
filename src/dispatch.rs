@@ -1,3 +1,4 @@
+#![allow(unused)]
 pub trait ParserDispatcher<E: std::error::Error>: clap::Parser
 where
     crate::Exit: From<std::result::Result<(), E>>,

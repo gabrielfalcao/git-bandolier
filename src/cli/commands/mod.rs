@@ -1,3 +1,4 @@
+#![allow(unused)]
 pub mod switch;
 pub use switch::{
     SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt,

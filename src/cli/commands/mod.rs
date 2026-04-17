@@ -14,3 +14,6 @@ pub use commit_dated::{
 
 pub mod web;
 pub use web::{WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt};
+
+pub(crate) mod path;
+pub use path::{PathCommand, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt};

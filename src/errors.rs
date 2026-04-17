@@ -20,6 +20,7 @@ pub enum Error {
     PestError(String),
 
     TokioError(String),
+    Git2Error(String),
 
     AxumError(String),
 
@@ -50,6 +51,7 @@ impl Display for Error {
                 Error::PestError(e) => e.to_string(),
 
                 Error::TokioError(e) => e.to_string(),
+                Error::Git2Error(e) => e.to_string(),
 
                 Error::AxumError(e) => e.to_string(),
 
@@ -80,6 +82,7 @@ impl Error {
             Error::PestError(_) => "PestError",
 
             Error::TokioError(_) => "TokioError",
+            Error::Git2Error(_) => "Git2Error",
 
             Error::AxumError(_) => "AxumError",
 
@@ -100,6 +103,11 @@ impl From<std::io::Error> for Error {
 impl From<iocore::Error> for Error {
     fn from(e: iocore::Error) -> Self {
         Error::IOError(e.to_string())
+    }
+}
+impl From<git2::Error> for Error {
+    fn from(e: git2::Error) -> Self {
+        Error::Git2Error(e.to_string())
     }
 }
 pub type Result<T> = std::result::Result<T, Error>;

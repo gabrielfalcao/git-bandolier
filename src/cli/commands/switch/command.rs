@@ -1,4 +1,4 @@
-use clap::{Args, Subcommand, Parser};
+use clap::{Subcommand, Parser};
 
 use crate::cli::commands::switch::{SwitchDirOpt, SwitchFileOpt};
 use crate::dispatch::{ArgsDispatcher, SubcommandDispatcher, ParserDispatcher};

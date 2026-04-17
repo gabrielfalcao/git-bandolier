@@ -1,45 +1,41 @@
-use clap::Args;
+use clap::Parser;
+use git2::Repository;
 use iocore::Path;
 
-use crate::cli::commands::branches::shared::BranchesSharedOpt;
-use crate::dispatch::ArgsDispatcher;
+use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
 
-#[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BranchesDirOpt {
-    #[clap(flatten)]
-    opt: BranchesSharedOpt,
-}
+#[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct BranchesOpt {}
 
-impl BranchesDirOpt {
-    pub fn path(&self) -> Path {
-        self.opt.path()
+impl BranchesOpt {
+    pub fn git_repo(&self) -> Result<Repository> {
+        Ok(Repository::discover::<Path>(Path::cwd().into())?)
     }
 }
 
-impl ArgsDispatcher<Error> for BranchesDirOpt {
+impl ParserDispatcher<Error> for BranchesOpt {
     fn dispatch(&self) -> Result<()> {
-        let path = self.path();
-        println!("path: {path}");
-        Ok(())
-    }
-}
-
-#[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BranchesFileOpt {
-    #[clap(flatten)]
-    opt: BranchesSharedOpt,
-}
-impl BranchesFileOpt {
-    pub fn path(&self) -> Path {
-        self.opt.path()
-    }
-}
-
-impl ArgsDispatcher<Error> for BranchesFileOpt {
-    fn dispatch(&self) -> Result<()> {
-        let path = self.path();
-        println!("path: {path}");
+        let git = self.git_repo()?;
+        let branches = git.branches(Some(git2::BranchType::Local))?;
+        for br in branches {
+            match br {
+                Ok((branch, ty)) => match branch.name() {
+                    Ok(Some(name)) => {
+                        println!("{name} {ty:#?}");
+                    },
+                    Ok(None) => {
+                        println!("could not get {ty:#?} branch name");
+                    },
+                    Err(error) => {
+                        eprintln!("Error reading {ty:#?} branch name: {error}");
+                    },
+                },
+                Err(error) => {
+                    eprintln!("Error reading branch info: {error}");
+                },
+            }
+        }
         Ok(())
     }
 }

@@ -7,7 +7,6 @@ pub mod models;
 pub use models::Context;
 
 pub mod cli;
-pub use cli::commands;
 pub use cli::{
     CommitDatedCommand,   // CommitDatedCommand
     CommitDatedDirOpt,    // CommitDatedDirOpt
@@ -26,9 +25,6 @@ pub use cli::{
     WebOpt,       // WebOpt
     WebSharedOpt, // WebSharedOpt
 
-    BranchesCommand, // BranchesCommand
-    BranchesDirOpt,  // BranchesDirOpt
-    BranchesFileOpt, // BranchesFileOpt
     BranchesOpt,     // BranchesOpt
 
 };

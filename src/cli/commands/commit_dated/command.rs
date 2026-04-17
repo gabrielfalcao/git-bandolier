@@ -1,4 +1,4 @@
-use clap::{Args, Parser, Subcommand};
+use clap::{Parser, Subcommand};
 
 use crate::cli::commands::commit_dated::{
     CommitDatedDirOpt, CommitDatedFileOpt,

@@ -3,8 +3,8 @@ pub use switch::{
     SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
 };
 
-pub mod web;
-pub use web::{WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt};
+pub mod branches;
+pub use branches::BranchesOpt;
 
 pub mod commit_dated;
 pub use commit_dated::{
@@ -12,8 +12,5 @@ pub use commit_dated::{
     CommitDatedSharedOpt,
 };
 
-pub mod branches;
-pub use branches::{
-    BranchesCommand, BranchesDirOpt, BranchesFileOpt, BranchesOpt,
-    BranchesSharedOpt,
-};
+pub mod web;
+pub use web::{WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt};

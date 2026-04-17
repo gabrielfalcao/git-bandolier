@@ -1,16 +1,7 @@
 pub mod commands;
-
-pub use commands::branches::{
-    BranchesCommand, BranchesDirOpt, BranchesFileOpt, BranchesOpt,
-    BranchesSharedOpt,
-};
-pub use commands::commit_dated::{
-    CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt, CommitDatedOpt,
-    CommitDatedSharedOpt,
-};
-pub use commands::switch::{
-    SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
-};
-pub use commands::web::{
-    WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt,
+pub use commands::{
+    BranchesOpt, CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt,
+    CommitDatedOpt, CommitDatedSharedOpt, SwitchCommand, SwitchDirOpt,
+    SwitchFileOpt, SwitchOpt, SwitchSharedOpt, WebCommand, WebDirOpt,
+    WebFileOpt, WebOpt, WebSharedOpt,
 };

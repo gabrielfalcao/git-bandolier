@@ -19,6 +19,11 @@ pub use cli::{
     SwitchFileOpt, // SwitchFileOpt
     SwitchOpt,     // SwitchOpt
 
+    PathCommand, // PathCommand
+    PathDirOpt,  // PathDirOpt
+    PathFileOpt, // PathFileOpt
+    PathOpt,     // PathOpt
+
     WebCommand,   // WebCommand
     WebDirOpt,    // WebDirOpt
     WebFileOpt,   // WebFileOpt

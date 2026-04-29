@@ -1,21 +1,21 @@
 use clap::{Subcommand, Parser};
 
-use crate::cli::commands::remotes::{SwitchDirOpt, SwitchFileOpt};
+use crate::cli::commands::remotes::{RemotesDirOpt, RemotesFileOpt};
 use crate::dispatch::{ArgsDispatcher, SubcommandDispatcher, ParserDispatcher};
 use crate::{Error, Result};
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum SwitchCommand {
-    Dir(SwitchDirOpt),
-    File(SwitchFileOpt),
+pub enum RemotesCommand {
+    Dir(RemotesDirOpt),
+    File(RemotesFileOpt),
 }
-impl SubcommandDispatcher<Error> for SwitchCommand {
+impl SubcommandDispatcher<Error> for RemotesCommand {
     fn dispatch(&self) -> Result<()> {
         match self {
-            SwitchCommand::Dir(op) => {
+            RemotesCommand::Dir(op) => {
                 op.dispatch()?;
             },
-            SwitchCommand::File(op) => {
+            RemotesCommand::File(op) => {
                 op.dispatch()?;
             },
         }
@@ -25,12 +25,12 @@ impl SubcommandDispatcher<Error> for SwitchCommand {
 
 
 #[derive(Parser, Debug, Clone)]
-pub struct SwitchOpt {
+pub struct RemotesOpt {
     #[command(subcommand)]
-    command: SwitchCommand,
+    command: RemotesCommand,
 }
 
-impl ParserDispatcher<Error> for SwitchOpt {
+impl ParserDispatcher<Error> for RemotesOpt {
     fn dispatch(&self) -> Result<()> {
         self.command.dispatch()?;
         Ok(())

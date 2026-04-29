@@ -1,23 +1,23 @@
 use clap::Args;
 use iocore::Path;
 
-use crate::cli::commands::remotes::shared::SwitchSharedOpt;
+use crate::cli::commands::remotes::shared::RemotesSharedOpt;
 use crate::dispatch::ArgsDispatcher;
 use crate::{Error, Result};
 
 #[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SwitchDirOpt {
+pub struct RemotesDirOpt {
     #[clap(flatten)]
-    opt: SwitchSharedOpt,
+    opt: RemotesSharedOpt,
 }
 
-impl SwitchDirOpt {
+impl RemotesDirOpt {
     pub fn path(&self) -> Path {
         self.opt.path()
     }
 }
 
-impl ArgsDispatcher<Error> for SwitchDirOpt {
+impl ArgsDispatcher<Error> for RemotesDirOpt {
     fn dispatch(&self) -> Result<()> {
         let path = self.path();
         println!("path: {path}");
@@ -26,17 +26,17 @@ impl ArgsDispatcher<Error> for SwitchDirOpt {
 }
 
 #[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct SwitchFileOpt {
+pub struct RemotesFileOpt {
     #[clap(flatten)]
-    opt: SwitchSharedOpt,
+    opt: RemotesSharedOpt,
 }
-impl SwitchFileOpt {
+impl RemotesFileOpt {
     pub fn path(&self) -> Path {
         self.opt.path()
     }
 }
 
-impl ArgsDispatcher<Error> for SwitchFileOpt {
+impl ArgsDispatcher<Error> for RemotesFileOpt {
     fn dispatch(&self) -> Result<()> {
         let path = self.path();
         println!("path: {path}");

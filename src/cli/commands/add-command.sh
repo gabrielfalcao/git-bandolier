@@ -29,14 +29,13 @@ declare -a hecks=(snake pascal shouty_snake)
 declare -- new_command_name=$(heck-string --to="snake" <<< "${argv[0]}")
 cp -rfv "${script_path}/switch/"  "${script_path}/${new_command_name}/"
 
-git add  "${script_path}/${new_command_name}"
-git commit  "${script_path}/${new_command_name}" -m "adds new command ${new_command_name@Q}"
 
 for variant in ${hecks[@]}; do
     cur_var=$(heck-string --to="${variant}" "switch")
-    dst_var=$(heck-string --to="${variant}" "remotes")
+    dst_var=$(heck-string --to="${variant}" "${new_command_name}")
 
-    if (cd "${script_path}/${new_command_name}" &&  refactors "${cur_var}" "${dst_var}" -wp .); then
+    cd "${script_path}/${new_command_name}"
+    if refactors "${cur_var}" "${dst_var}" -wp .; then
         git add -f .
         git commit . -m "from ${cur_var} to ${dst_var}"
     fi

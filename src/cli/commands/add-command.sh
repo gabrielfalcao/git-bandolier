@@ -52,6 +52,7 @@ for variant in ${hecks[@]}; do
             code=0
         else
             code=$?
+            1>&2 echo -e ""
         fi
     fi
 done

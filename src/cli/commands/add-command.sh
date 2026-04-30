@@ -26,17 +26,32 @@ export IFS=$'\n'
 
 declare -a hecks=(snake pascal shouty_snake)
 
-declare -- new_command_name=$(heck-string --to="snake" <<< "${argv[0]}")
+declare -- new_command_input_path="${script_path}/${new_command_name}/"
+declare -- new_command_abs_path=$(path canon "${new_command_input_path}")
+declare -- new_command_path_relative_to_git_repo=${new_command_abs_path#${git_repo_path}/}
+
+declare -- new_command_name=$(heck-string --to=snake "$(slugify-string "${argv[1]}")")
+# declare -- new_command_name=$(heck-string --to="snake" <<< "${argv[1]}")
 cp -rfv "${script_path}/switch/"  "${script_path}/${new_command_name}/"
 
-
+declare -- from_input="switch"
+declare -- to_input="${new_command_name}"
+declare -- from=""
+declare -- to=""
+declare -- new_command_path_relative_to_git_repo=$(path canon "${}")
+declare -i code=0
 for variant in ${hecks[@]}; do
-    cur_var=$(heck-string --to="${variant}" "switch")
-    dst_var=$(heck-string --to="${variant}" "${new_command_name}")
+    from=$(heck-string --to="${variant}" "switch")
+    to=$(heck-string --to="${variant}" "${new_command_name}")
 
-    cd "${script_path}/${new_command_name}"
-    if refactors "${cur_var}" "${dst_var}" -wp .; then
-        git add -f .
-        git commit . -m "from ${cur_var} to ${dst_var}"
+    cd "${git_repo_path}"
+
+    code=0
+    if refactors "${cur_var}" "${dst_var}" -wp "${new_command_abs_path}"; then
+        if (cd "${git_repo_path}" && git add -f "${script_path}/${new_command_name}" && git commit "${script_path}/${new_command_name}" -m "from ${cur_var} to ${dst_var}"); then
+            code=0
+        else
+            code=$?
+        fi
     fi
 done

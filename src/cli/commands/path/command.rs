@@ -2,7 +2,6 @@ use clap::Parser;
 use git2::Repository;
 use iocore::Path;
 
-use crate::cli::commands::switch::{PathDirOpt, PathFileOpt};
 use crate::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 use crate::{Error, Result};
 
@@ -27,12 +26,35 @@ impl ParserDispatcher<Error> for PathOpt {
         let starting_point = self.starting_point();
         match discover_git_repo(&starting_point) {
             Ok(repo) => {
-                println!("{repo:#?}");
+                // let branch_name = repo
+                //     .branches(Some(git2::BranchType::Local))?
+                //     .map(|result| {
+                //         result.map(|(branch, _branch_type)| {
+                //             let branch_name = branch
+                //                 .name()
+                //                 .map(|oname| oname.map(|name| name.to_string())).unwrap();
+                //             branch_name
+                //         })
+                //     })
+                //     .reduce(|acc, e| {
+                //         dbg!(&acc, &e);
+                //         format!("{e:#?}")
+                //         // e.unwrap().to_string()
+                //     });
+                let head = repo.head()?;
+                let head_name = head
+                    .name()
+                    .map(|name| name.to_string())
+                    .or_else(|| head.target().map(|target| hex::encode(target.as_bytes())))
+                    .unwrap();
+
+                println!("head: {head_name}");
+                // println!("branch: {branch_name}");
             }
             Err(error) => {
                 let path = starting_point.to_string();
-                eprintln!("path {:#?} is not versioned by git: {error}");
-                std::process::exit(404 % u8::MAX.into());
+                eprintln!("path {path:#?} is not versioned by git: {error}");
+                std::process::exit(3);
             }
         }
         Ok(())

@@ -1,7 +1,7 @@
 use clap::Args;
 use iocore::Path;
 
-use crate::cli::commands::switch::shared::PathSharedOpt;
+use crate::cli::PathSharedOpt;
 use crate::dispatch::ArgsDispatcher;
 use crate::{Error, Result};
 

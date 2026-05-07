@@ -8,28 +8,58 @@ pub use models::Context;
 
 pub mod cli;
 pub use cli::{
-    CommitDatedCommand,   // CommitDatedCommand
-    CommitDatedDirOpt,    // CommitDatedDirOpt
-    CommitDatedFileOpt,   // CommitDatedFileOpt
-    CommitDatedOpt,       // CommitDatedOpt
-    CommitDatedSharedOpt, // CommitDatedSharedOpt
+    discover_git_repo,
+    BranchesOpt,
 
-    SwitchCommand, // SwitchCommand
-    SwitchDirOpt,  // SwitchDirOpt
-    SwitchFileOpt, // SwitchFileOpt
-    SwitchOpt,     // SwitchOpt
+    CommitDatedCommand,
+    CommitDatedDirOpt,
+    CommitDatedFileOpt,
 
-    PathCommand, // PathCommand
-    PathDirOpt,  // PathDirOpt
-    PathFileOpt, // PathFileOpt
-    PathOpt,     // PathOpt
+    CommitDatedOpt,
+    CommitDatedSharedOpt,
+    PathDirOpt,
+    PathFileOpt,
+    PathOpt,
+    PathSharedOpt,
 
-    WebCommand,   // WebCommand
-    WebDirOpt,    // WebDirOpt
-    WebFileOpt,   // WebFileOpt
-    WebOpt,       // WebOpt
-    WebSharedOpt, // WebSharedOpt
+    SwitchCommand,
+    SwitchDirOpt,
+    SwitchFileOpt,
+    SwitchOpt,
+    SwitchSharedOpt,
+    WebCommand,
+    WebDirOpt,
 
-    BranchesOpt,     // BranchesOpt
+    WebFileOpt,
+    WebOpt,
+    WebSharedOpt,
 
 };
+
+// pub mod cli;
+// pub use cli::{
+//     CommitDatedCommand,   // CommitDatedCommand
+//     CommitDatedDirOpt,    // CommitDatedDirOpt
+//     CommitDatedFileOpt,   // CommitDatedFileOpt
+//     CommitDatedOpt,       // CommitDatedOpt
+//     CommitDatedSharedOpt, // CommitDatedSharedOpt
+
+//     SwitchCommand, // SwitchCommand
+//     SwitchDirOpt,  // SwitchDirOpt
+//     SwitchFileOpt, // SwitchFileOpt
+//     SwitchOpt,     // SwitchOpt
+
+//     PathCommand, // PathCommand
+//     PathDirOpt,  // PathDirOpt
+//     PathFileOpt, // PathFileOpt
+//     PathOpt,     // PathOpt
+
+//     WebCommand,   // WebCommand
+//     WebDirOpt,    // WebDirOpt
+//     WebFileOpt,   // WebFileOpt
+//     WebOpt,       // WebOpt
+//     WebSharedOpt, // WebSharedOpt
+
+//     BranchesOpt,     // BranchesOpt
+
+// };

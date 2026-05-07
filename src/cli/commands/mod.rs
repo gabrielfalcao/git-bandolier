@@ -1,19 +1,16 @@
 pub mod switch;
-pub use switch::{
-    SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
-};
+pub use switch::{SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt};
 
 pub mod branches;
 pub use branches::BranchesOpt;
 
 pub mod commit_dated;
 pub use commit_dated::{
-    CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt, CommitDatedOpt,
-    CommitDatedSharedOpt,
+    CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt, CommitDatedOpt, CommitDatedSharedOpt,
 };
 
 pub mod web;
 pub use web::{WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt};
 
 pub(crate) mod path;
-pub use path::{PathCommand, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt};
+pub use path::{discover_git_repo, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt};

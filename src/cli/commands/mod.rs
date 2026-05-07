@@ -12,5 +12,5 @@ pub use commit_dated::{
 pub mod web;
 pub use web::{WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt};
 
-pub(crate) mod path;
-pub use path::{discover_git_repo, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt};
+pub mod path;
+pub use path::{PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt};

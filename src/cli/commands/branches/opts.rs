@@ -25,7 +25,7 @@ impl ParserDispatcher<Error> for BranchesOpt {
                         println!("{name} {ty:#?}");
                     },
                     Ok(None) => {
-                        println!("could not get {ty:#?} branch name");
+                        eprintln!("could not get {ty:#?} branch name");
                     },
                     Err(error) => {
                         eprintln!("Error reading {ty:#?} branch name: {error}");

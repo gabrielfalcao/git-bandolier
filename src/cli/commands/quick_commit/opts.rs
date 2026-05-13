@@ -6,11 +6,11 @@ use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
-pub struct RemotesListOpt {
+pub struct QuickCommitListOpt {
     #[arg()]
     path: Option<Path>,
 }
-impl RemotesListOpt {
+impl QuickCommitListOpt {
     pub fn path(&self) -> Path {
         self.path.clone().unwrap_or_else(|| Path::cwd())
     }
@@ -19,7 +19,7 @@ impl RemotesListOpt {
     }
 }
 
-impl ParserDispatcher<Error> for RemotesListOpt {
+impl ParserDispatcher<Error> for QuickCommitListOpt {
     fn dispatch(&self) -> Result<()> {
         let repo = self.git_repo()?;
         let quick-commit = repo.quick-commit()?;

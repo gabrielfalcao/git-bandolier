@@ -1,5 +1,5 @@
 pub(crate) mod opts;
-pub use opts::RemotesListOpt;
+pub use opts::QuickCommitListOpt;
 
 pub(crate) mod command;
-pub use command::{RemotesCommand, RemotesOpt};
+pub use command::{QuickCommitCommand, QuickCommitOpt};

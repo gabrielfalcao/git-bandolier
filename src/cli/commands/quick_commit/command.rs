@@ -1,22 +1,22 @@
 use clap::{Parser, Subcommand};
 
-use crate::cli::commands::quick-commit::RemotesListOpt;
+use crate::cli::commands::quick-commit::QuickCommitListOpt;
 use crate::dispatch::{ParserDispatcher, SubcommandDispatcher};
 use crate::{Error, Result};
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum RemotesCommand {
-    List(RemotesListOpt),
+pub enum QuickCommitCommand {
+    List(QuickCommitListOpt),
 }
-impl Default for RemotesCommand {
-    fn default() -> RemotesCommand {
-        RemotesCommand::List(Default::default())
+impl Default for QuickCommitCommand {
+    fn default() -> QuickCommitCommand {
+        QuickCommitCommand::List(Default::default())
     }
 }
-impl SubcommandDispatcher<Error> for RemotesCommand {
+impl SubcommandDispatcher<Error> for QuickCommitCommand {
     fn dispatch(&self) -> Result<()> {
         match self {
-            RemotesCommand::List(op) => {
+            QuickCommitCommand::List(op) => {
                 op.dispatch()?;
             }
         }
@@ -25,12 +25,12 @@ impl SubcommandDispatcher<Error> for RemotesCommand {
 }
 
 #[derive(Parser, Debug, Clone)]
-pub struct RemotesOpt {
+pub struct QuickCommitOpt {
     #[command(subcommand)]
-    command: RemotesCommand,
+    command: QuickCommitCommand,
 }
 
-impl ParserDispatcher<Error> for RemotesOpt {
+impl ParserDispatcher<Error> for QuickCommitOpt {
     fn dispatch(&self) -> Result<()> {
         self.command.dispatch()?;
         Ok(())

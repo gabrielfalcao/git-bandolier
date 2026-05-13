@@ -22,9 +22,9 @@ impl QuickCommitListOpt {
 impl ParserDispatcher<Error> for QuickCommitListOpt {
     fn dispatch(&self) -> Result<()> {
         let repo = self.git_repo()?;
-        let quick-commit = repo.quick-commit()?;
-        let total = quick-commit.len();
-        for (index, op_name) in quick-commit.iter().enumerate() {
+        let quick_commit = repo.quick_commit()?;
+        let total = quick_commit.len();
+        for (index, op_name) in quick_commit.iter().enumerate() {
             let current = index + 1;
             match op_name.map(|name| repo.find_remote(name)) {
                 Some(Ok(remote)) => {

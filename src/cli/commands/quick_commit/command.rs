@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::cli::commands::quick-commit::QuickCommitListOpt;
+use crate::cli::commands::quick_commit::QuickCommitListOpt;
 use crate::dispatch::{ParserDispatcher, SubcommandDispatcher};
 use crate::{Error, Result};
 

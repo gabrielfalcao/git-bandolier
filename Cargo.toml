@@ -8,7 +8,7 @@ license = "MIT OR Apache-2.0"
 edition = "2024"
 autoexamples = false
 autobenches = false
-default-run = "git-path"
+default-run = "git-bandolier"
 
 # categories = [] # https://crates.io/category_slugs
 
@@ -35,6 +35,12 @@ path = "src/cli/bin/git-path.rs"
 doc = false
 test = false
 
+
+[[bin]]
+name = "git-quick-commit"
+path = "src/cli/bin/git-quick-commit.rs"
+doc = false
+test = false
 
 [[bin]]
 name = "git-commit-dated"

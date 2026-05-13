@@ -1,19 +1,12 @@
 use clap::{Parser, Subcommand};
 use git_bandolier::cli::commands::{
-    BranchesOpt, CommitDatedOpt, PathOpt, SwitchOpt, WebOpt,
+    BranchesOpt, CommitDatedOpt, PathOpt, QuickCommitOpt, SwitchOpt, WebOpt,
 };
-use git_bandolier::dispatch::{
-    ArgsDispatcher, ParserDispatcher, SubcommandDispatcher,
-};
+use git_bandolier::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 use git_bandolier::{Error, Exit, Result};
 
 #[derive(Parser, Debug, Clone)]
-#[command(
-    author,
-    version,
-    about,
-    long_about = "git_bandolier command-line"
-)]
+#[command(author, version, about, long_about = "git_bandolier command-line")]
 pub struct Cli {
     #[command(subcommand)]
     command: Command,
@@ -39,6 +32,7 @@ pub enum Command {
     Path(PathOpt),
     CommitDated(CommitDatedOpt),
     Br(BranchesOpt),
+    QuickCommit(QuickCommitOpt),
     Web(WebOpt),
 }
 impl SubcommandDispatcher<Error> for Command {
@@ -49,6 +43,7 @@ impl SubcommandDispatcher<Error> for Command {
             Command::Path(op) => op.dispatch()?,
             Command::Web(op) => op.dispatch()?,
             Command::Br(op) => op.dispatch()?,
+            Command::QuickCommit(op) => op.dispatch()?,
         }
         Ok(())
     }

@@ -110,6 +110,11 @@ impl From<git2::Error> for Error {
         Error::Git2Error(e.to_string())
     }
 }
+impl From<sanitation::Error<'_>> for Error {
+    fn from(e: sanitation::Error<'_>) -> Self {
+        Error::RuntimeError(e.to_string())
+    }
+}
 pub type Result<T> = std::result::Result<T, Error>;
 
 #[derive(Debug, Clone)]

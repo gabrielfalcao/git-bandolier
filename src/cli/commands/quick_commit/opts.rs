@@ -1,9 +1,16 @@
 use clap::Parser;
+
 use git2::Repository;
-use iocore::Path;
+use git2::RepositoryState;
+use git2::Status;
+use git2::StatusEntry;
+use git2::StatusIter;
+use git2::Statuses;
 
 use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
+use iocore::Path;
+use sanitation::SString;
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub struct QuickCommitListOpt {
@@ -19,26 +26,39 @@ impl QuickCommitListOpt {
     }
 }
 
+pub fn entry_status_to_string(entry: Status) -> &'static str {
+    match entry {
+        Status::CURRENT => "CURRENT",
+        Status::INDEX_NEW => "INDEX_NEW",
+        Status::INDEX_MODIFIED => "INDEX_MODIFIED",
+        Status::INDEX_DELETED => "INDEX_DELETED",
+        Status::INDEX_RENAMED => "INDEX_RENAMED",
+        Status::INDEX_TYPECHANGE => "INDEX_TYPECHANGE",
+        Status::WT_NEW => "WT_NEW",
+        Status::WT_MODIFIED => "WT_MODIFIED",
+        Status::WT_DELETED => "WT_DELETED",
+        Status::WT_TYPECHANGE => "WT_TYPECHANGE",
+        Status::WT_RENAMED => "WT_RENAMED",
+        Status::WT_UNREADABLE => "WT_UNREADABLE",
+        Status::IGNORED => "IGNORED",
+        Status::CONFLICTED => "CONFLICTED",
+        _ => unreachable!(),
+    }
+}
 impl ParserDispatcher<Error> for QuickCommitListOpt {
     fn dispatch(&self) -> Result<()> {
         let repo = self.git_repo()?;
-        let quick_commit = repo.quick_commit()?;
-        let total = quick_commit.len();
-        for (index, op_name) in quick_commit.iter().enumerate() {
-            let current = index + 1;
-            match op_name.map(|name| repo.find_remote(name)) {
-                Some(Ok(remote)) => {
-                    let name = remote.name().map(|name|name.to_string()).unwrap();
-                    let url = remote.url().map(|url|url.to_string()).unwrap();
-                    println!("{name} {url}");
-                }
-                Some(Err(error)) => {
-                    eprintln!("error retrieving remote {current} of {total}: {error}");
-                }
-                None => {
-                    eprintln!("cannot find remote {current} of {total}");
-                }
-            }
+        let state = repo.state();
+        let mut opts = git2::StatusOptions::new();
+        opts.include_untracked(true);
+        opts.exclude_submodules(true);
+
+        let status = repo.statuses(Some(&mut opts))?;
+
+        for entry in status.iter() {
+            let path = SString::new(&entry.path_bytes()).safe()?;
+            let status = entry_status_to_string(entry.status());
+            println!("{path}\t{status}");
         }
         Ok(())
     }

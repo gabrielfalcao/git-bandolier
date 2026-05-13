@@ -11,10 +11,10 @@ pub use models::Context;
 
 pub mod cli;
 pub use cli::{
-    BranchesOpt, CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt,
-    CommitDatedOpt, CommitDatedSharedOpt, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt,
-    SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt, WebCommand, WebDirOpt,
-    WebFileOpt, WebOpt, WebSharedOpt,
+    BranchesOpt, CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt, CommitDatedOpt,
+    CommitDatedSharedOpt, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt, QuickCommitCommand,
+    QuickCommitListOpt, QuickCommitOpt, SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt,
+    SwitchSharedOpt, WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt,
 };
 
 // pub mod cli;

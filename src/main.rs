@@ -19,9 +19,7 @@ impl Cli {
 
 impl ParserDispatcher<Error> for Cli {
     fn dispatch(&self) -> Result<()> {
-        let cmd = &self.command;
-        dbg!(&cmd);
-
+        self.command().dispatch()?;
         Ok(())
     }
 }
@@ -31,6 +29,7 @@ pub enum Command {
     Switch(SwitchOpt),
     Path(PathOpt),
     CommitDated(CommitDatedOpt),
+    Branches(BranchesOpt),
     Br(BranchesOpt),
     QuickCommit(QuickCommitOpt),
     Web(WebOpt),
@@ -43,6 +42,7 @@ impl SubcommandDispatcher<Error> for Command {
             Command::Path(op) => op.dispatch()?,
             Command::Web(op) => op.dispatch()?,
             Command::Br(op) => op.dispatch()?,
+            Command::Branches(op) => op.dispatch()?,
             Command::QuickCommit(op) => op.dispatch()?,
         }
         Ok(())

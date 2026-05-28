@@ -14,6 +14,7 @@ pub enum Error {
     SerdeYamlError(String),
 
     TomlError(String),
+    DateTimeError(String),
 
     NomError(String),
 
@@ -41,6 +42,7 @@ impl Display for Error {
                 Error::RegexError(e) => e.to_string(),
 
                 Error::SerdeJsonError(e) => e.to_string(),
+                Error::DateTimeError(e) => e.to_string(),
 
                 Error::SerdeYamlError(e) => e.to_string(),
 
@@ -76,6 +78,7 @@ impl Error {
             Error::SerdeYamlError(_) => "SerdeYamlError",
 
             Error::TomlError(_) => "TomlError",
+            Error::DateTimeError(_) => "DateTimeError",
 
             Error::NomError(_) => "NomError",
 
@@ -110,6 +113,11 @@ impl From<git2::Error> for Error {
         Error::Git2Error(e.to_string())
     }
 }
+// impl From<chrono::Error> for Error {
+//     fn from(e: chrono::Error) -> Self {
+//         Error::DateTimeError(e.to_string())
+//     }
+// }
 impl From<sanitation::Error<'_>> for Error {
     fn from(e: sanitation::Error<'_>) -> Self {
         Error::RuntimeError(e.to_string())

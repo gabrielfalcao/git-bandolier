@@ -13,34 +13,6 @@ pub mod cli;
 pub use cli::{
     BranchesOpt, CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt, CommitDatedOpt,
     CommitDatedSharedOpt, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt, QuickCommitCommand,
-    QuickCommitListOpt, QuickCommitOpt, RemotesCommand, RemotesOpt, SwitchCommand, SwitchDirOpt,
-    SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
+    QuickCommitListOpt, QuickCommitOpt, RemotesOpt, SwitchCommand, SwitchDirOpt, SwitchFileOpt,
+    SwitchOpt, SwitchSharedOpt,
 };
-
-// pub mod cli;
-// pub use cli::{
-//     CommitDatedCommand,   // CommitDatedCommand
-//     CommitDatedDirOpt,    // CommitDatedDirOpt
-//     CommitDatedFileOpt,   // CommitDatedFileOpt
-//     CommitDatedOpt,       // CommitDatedOpt
-//     CommitDatedSharedOpt, // CommitDatedSharedOpt
-
-//     SwitchCommand, // SwitchCommand
-//     SwitchDirOpt,  // SwitchDirOpt
-//     SwitchFileOpt, // SwitchFileOpt
-//     SwitchOpt,     // SwitchOpt
-
-//     PathCommand, // PathCommand
-//     PathDirOpt,  // PathDirOpt
-//     PathFileOpt, // PathFileOpt
-//     PathOpt,     // PathOpt
-
-//     WebCommand,   // WebCommand
-//     WebDirOpt,    // WebDirOpt
-//     WebFileOpt,   // WebFileOpt
-//     WebOpt,       // WebOpt
-//     WebSharedOpt, // WebSharedOpt
-
-//     BranchesOpt,     // BranchesOpt
-
-// };

@@ -30,15 +30,15 @@ pub enum Command {
     CommitDated(CommitDatedOpt),
     Branches(BranchesOpt),
     Br(BranchesOpt),
+    Remotes(RemotesOpt),
     QuickCommit(QuickCommitOpt),
-    Web(WebOpt),
 }
 impl SubcommandDispatcher<Error> for Command {
     fn dispatch(&self) -> Result<()> {
         match self {
             Command::CommitDated(op) => op.dispatch()?,
             Command::Path(op) => op.dispatch()?,
-            Command::Web(op) => op.dispatch()?,
+            Command::Remotes(op) => op.dispatch()?,
             Command::Br(op) => op.dispatch()?,
             Command::Branches(op) => op.dispatch()?,
             Command::QuickCommit(op) => op.dispatch()?,

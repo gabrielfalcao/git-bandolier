@@ -1,7 +1,7 @@
-use clap::{Subcommand, Parser};
+use clap::{Parser, Subcommand};
 
 use crate::cli::commands::switch::{SwitchDirOpt, SwitchFileOpt};
-use crate::dispatch::{ArgsDispatcher, SubcommandDispatcher, ParserDispatcher};
+use crate::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 use crate::{Error, Result};
 
 #[derive(Subcommand, Debug, Clone)]
@@ -14,15 +14,14 @@ impl SubcommandDispatcher<Error> for SwitchCommand {
         match self {
             SwitchCommand::Dir(op) => {
                 op.dispatch()?;
-            },
+            }
             SwitchCommand::File(op) => {
                 op.dispatch()?;
-            },
+            }
         }
         Ok(())
     }
 }
-
 
 #[derive(Parser, Debug, Clone)]
 pub struct SwitchOpt {

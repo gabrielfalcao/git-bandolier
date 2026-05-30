@@ -5,7 +5,6 @@ use iocore::Path;
 pub struct CommitDatedSharedOpt {
     #[arg(default_value = "~/git_bandolier")]
     path: Path,
-
 }
 impl CommitDatedSharedOpt {
     pub fn path(&self) -> Path {

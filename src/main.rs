@@ -1,6 +1,6 @@
 use clap::{Parser, Subcommand};
 use git_bandolier::cli::commands::{
-    BranchesOpt, CommitDatedOpt, PathOpt, QuickCommitOpt, SwitchOpt, WebOpt,
+    BranchesOpt, CommitDatedOpt, PathOpt, QuickCommitOpt, RemotesOpt,
 };
 use git_bandolier::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 use git_bandolier::{Error, Exit, Result};
@@ -26,7 +26,6 @@ impl ParserDispatcher<Error> for Cli {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum Command {
-    Switch(SwitchOpt),
     Path(PathOpt),
     CommitDated(CommitDatedOpt),
     Branches(BranchesOpt),
@@ -38,7 +37,6 @@ impl SubcommandDispatcher<Error> for Command {
     fn dispatch(&self) -> Result<()> {
         match self {
             Command::CommitDated(op) => op.dispatch()?,
-            Command::Switch(op) => op.dispatch()?,
             Command::Path(op) => op.dispatch()?,
             Command::Web(op) => op.dispatch()?,
             Command::Br(op) => op.dispatch()?,

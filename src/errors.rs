@@ -137,7 +137,7 @@ impl std::process::Termination for Exit {
             Exit::Error(error) => {
                 eprintln!("{}", error);
                 std::process::ExitCode::from(1)
-            },
+            }
         }
     }
 }

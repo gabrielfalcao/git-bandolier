@@ -1,8 +1,6 @@
 use clap::{Parser, Subcommand};
 
-use crate::cli::commands::commit_dated::{
-    CommitDatedDirOpt, CommitDatedFileOpt,
-};
+use crate::cli::commands::commit_dated::{CommitDatedDirOpt, CommitDatedFileOpt};
 use crate::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 use crate::{Error, Result};
 
@@ -16,10 +14,10 @@ impl SubcommandDispatcher<Error> for CommitDatedCommand {
         match self {
             CommitDatedCommand::Dir(op) => {
                 op.dispatch()?;
-            },
+            }
             CommitDatedCommand::File(op) => {
                 op.dispatch()?;
-            },
+            }
         }
         Ok(())
     }

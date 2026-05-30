@@ -3,7 +3,7 @@ pub use errors::{Error, Exit, Result};
 pub mod dispatch;
 pub use dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
 
-pub(crate) mod util;
+pub mod util;
 pub use util::discover_git_repo;
 
 pub mod models;
@@ -13,8 +13,8 @@ pub mod cli;
 pub use cli::{
     BranchesOpt, CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt, CommitDatedOpt,
     CommitDatedSharedOpt, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt, QuickCommitCommand,
-    QuickCommitListOpt, QuickCommitOpt, SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt,
-    SwitchSharedOpt, WebCommand, WebDirOpt, WebFileOpt, WebOpt, WebSharedOpt,
+    QuickCommitListOpt, QuickCommitOpt, RemotesCommand, RemotesOpt, SwitchCommand, SwitchDirOpt,
+    SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
 };
 
 // pub mod cli;

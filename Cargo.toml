@@ -30,6 +30,12 @@ doc = false
 test = false
 
 [[bin]]
+name = "git-remotes"
+path = "src/cli/bin/git-remotes.rs"
+doc = false
+test = false
+
+[[bin]]
 name = "git-path"
 path = "src/cli/bin/git-path.rs"
 doc = false

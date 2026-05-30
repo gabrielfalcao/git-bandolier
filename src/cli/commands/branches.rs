@@ -17,20 +17,6 @@ impl BranchesOpt {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct NamedBranchInfo {
-    pub name: String,
-    pub commit_hash: Oid,
-    pub datetime: DateTime<Utc>,
-}
-impl std::fmt::Display for NamedBranchInfo {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        let hash = self.commit_hash.to_string();
-        let date = self.datetime.to_string();
-        let name = self.name.to_string();
-        write!(f, "{hash} {date} {name}")
-    }
-}
 impl ParserDispatcher<Error> for BranchesOpt {
     fn dispatch(&self) -> Result<()> {
         let git = self.git_repo()?;
@@ -58,5 +44,19 @@ impl ParserDispatcher<Error> for BranchesOpt {
         }
 
         Ok(())
+    }
+}
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+pub struct NamedBranchInfo {
+    pub name: String,
+    pub commit_hash: Oid,
+    pub datetime: DateTime<Utc>,
+}
+impl std::fmt::Display for NamedBranchInfo {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        let hash = self.commit_hash.to_string();
+        let date = self.datetime.to_string();
+        let name = self.name.to_string();
+        write!(f, "{hash} {date} {name}")
     }
 }

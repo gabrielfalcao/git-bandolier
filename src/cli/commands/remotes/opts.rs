@@ -1,11 +1,11 @@
-use clap::Args;
+use clap::Parser;
 use iocore::Path;
 
-use crate::dispatch::ArgsDispatcher;
+use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
 use git2::{Remote, Repository};
 
-#[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RemotesOpt {}
 
 impl RemotesOpt {
@@ -14,7 +14,7 @@ impl RemotesOpt {
     }
 }
 
-impl ArgsDispatcher<Error> for RemotesOpt {
+impl ParserDispatcher<Error> for RemotesOpt {
     fn dispatch(&self) -> Result<()> {
         let git = self.git_repo()?;
         let remotes = git

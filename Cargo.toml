@@ -43,12 +43,6 @@ test = false
 
 
 [[bin]]
-name = "git-quick-commit"
-path = "src/cli/bin/git-quick-commit.rs"
-doc = false
-test = false
-
-[[bin]]
 name = "git-commit-dated"
 path = "src/cli/bin/git-commit-dated.rs"
 doc = false

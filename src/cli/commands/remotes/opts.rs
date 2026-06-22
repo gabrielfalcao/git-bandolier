@@ -3,7 +3,7 @@ use iocore::Path;
 
 use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
-use git2::{Remote, Repository};
+use git2::Repository;
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RemotesOpt {}
@@ -31,7 +31,7 @@ impl ParserDispatcher<Error> for RemotesOpt {
                     remote.pushurl().map(|url| url.to_string()),
                 )
             })
-            .filter(|(name, url)| name.is_some())
+            .filter(|(name, _url)| name.is_some())
             .map(|(name, url)| {
                 (
                     name.unwrap().to_string(),

@@ -6,7 +6,6 @@ use chrono::{DateTime, Utc};
 use git2::Oid;
 use git2::Repository;
 use iocore::Path;
-use sanitation::SString;
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BranchesOpt {}
@@ -24,7 +23,7 @@ impl ParserDispatcher<Error> for BranchesOpt {
             .branches(Some(git2::BranchType::Local))?
             .filter(|res| res.is_ok())
             .map(|res| res.unwrap())
-            .map(|(branch, ty)| {
+            .map(|(branch, _ty)| {
                 let name = branch.name().unwrap().map(|name| name.to_string()).unwrap();
                 let commit = branch.into_reference().peel_to_commit().unwrap();
                 let commit_hash = commit.id();

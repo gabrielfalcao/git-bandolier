@@ -1,11 +1,7 @@
 use clap::Parser;
 
 use git2::Repository;
-use git2::RepositoryState;
 use git2::Status;
-use git2::StatusEntry;
-use git2::StatusIter;
-use git2::Statuses;
 
 use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
@@ -48,7 +44,7 @@ pub fn entry_status_to_string(entry: Status) -> &'static str {
 impl ParserDispatcher<Error> for QuickCommitListOpt {
     fn dispatch(&self) -> Result<()> {
         let repo = self.git_repo()?;
-        let state = repo.state();
+        let _state = repo.state();
         let mut opts = git2::StatusOptions::new();
         opts.include_untracked(true);
         opts.exclude_submodules(true);

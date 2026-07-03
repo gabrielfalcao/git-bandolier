@@ -23,12 +23,12 @@ impl ParserDispatcher<Error> for RemotesOpt {
             .filter(|name| name.is_some())
             .map(|name| name.unwrap())
             .map(|name| git.find_remote(name))
-            .filter(|name| name.is_ok())
+            .filter(|remote| remote.is_ok())
             .map(|name| name.unwrap())
             .map(|remote| {
                 (
                     remote.name().map(|name| name.to_string()),
-                    remote.pushurl().map(|url| url.to_string()),
+                    remote.pushurl().map(|url| url.to_string()).or(remote.url().map(|url|url.to_string())),
                 )
             })
             .filter(|(name, _url)| name.is_some())
@@ -40,7 +40,7 @@ impl ParserDispatcher<Error> for RemotesOpt {
             })
             .collect::<Vec<(String, String)>>();
         for (name, url) in remotes {
-            println!("{name}\t{url}");
+            println!("{name} => {url}");
         }
         Ok(())
     }

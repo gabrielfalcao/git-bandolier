@@ -1,3 +1,4 @@
+#![allow(unused)]
 use clap::Parser;
 use iocore::Path;
 
@@ -28,7 +29,10 @@ impl ParserDispatcher<Error> for RemotesOpt {
             .map(|remote| {
                 (
                     remote.name().map(|name| name.to_string()),
-                    remote.pushurl().map(|url| url.to_string()).or(remote.url().map(|url|url.to_string())),
+                    remote
+                        .pushurl()
+                        .map(|url| url.to_string())
+                        .or(remote.url().map(|url| url.to_string())),
                 )
             })
             .filter(|(name, _url)| name.is_some())
@@ -39,8 +43,23 @@ impl ParserDispatcher<Error> for RemotesOpt {
                 )
             })
             .collect::<Vec<(String, String)>>();
-        for (name, url) in remotes {
-            println!("{name} => {url}");
+
+        let total = remotes.len();
+        let name_max_width = remotes
+            .iter()
+            .map(|(name, _)| name.len())
+            .max()
+            .unwrap_or_default();
+        let url_max_width = remotes
+            .iter()
+            .map(|(url, _)| url.len())
+            .max()
+            .unwrap_or_default();
+
+        for (index, (name, url)) in remotes.iter().enumerate() {
+            let current = index + 1;
+            // println!("[{current: >2} of {total}] {name: >name_max_width$} => {url: >url_max_width$}");
+            println!("{name: >name_max_width$} => {url: >url_max_width$}");
         }
         Ok(())
     }

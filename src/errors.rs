@@ -8,6 +8,7 @@ pub enum Error {
     RuntimeError(String),
 
     RegexError(String),
+    CouleurError(String),
 
     SerdeJsonError(String),
 
@@ -40,6 +41,7 @@ impl Display for Error {
                 Error::RuntimeError(e) => e.to_string(),
 
                 Error::RegexError(e) => e.to_string(),
+                Error::CouleurError(e) => e.to_string(),
 
                 Error::SerdeJsonError(e) => e.to_string(),
                 Error::DateTimeError(e) => e.to_string(),
@@ -72,6 +74,7 @@ impl Error {
             Error::RuntimeError(_) => "RuntimeError",
 
             Error::RegexError(_) => "RegexError",
+            Error::CouleurError(_) => "CouleurError",
 
             Error::SerdeJsonError(_) => "SerdeJsonError",
 
@@ -113,6 +116,11 @@ impl From<git2::Error> for Error {
         Error::Git2Error(e.to_string())
     }
 }
+impl From<couleur::Error> for Error {
+    fn from(e: couleur::Error) -> Self {
+        Error::CouleurError(e.to_string())
+    }
+}
 // impl From<chrono::Error> for Error {
 //     fn from(e: chrono::Error) -> Self {
 //         Error::DateTimeError(e.to_string())
@@ -148,30 +156,4 @@ impl<T> From<std::result::Result<T, Error>> for Exit {
             Err(e) => Exit::Error(e),
         }
     }
-}
-
-#[macro_export]
-macro_rules! function_name {
-    () => {{
-        fn f() {}
-        fn type_name_of<T>(_: T) -> &'static str {
-            std::any::type_name::<T>()
-        }
-        let name = type_name_of(f);
-        let name = name.strip_suffix("::f").unwrap();
-        name
-    }};
-}
-#[macro_export]
-macro_rules! traceback {
-    ($variant:ident, $error:expr ) => {{
-        let name = $crate::function_name!();
-        $crate::Error::$variant(format!("{} [{}:[{}:{}]]\n", $error, name, file!(), line!()))
-    }};
-    ($variant:ident, $format:literal, $arg:expr  ) => {{
-        $crate::traceback!($variant, format!($format, $arg))
-    }};
-    ($variant:ident, $format:literal, $( $arg:expr ),* ) => {{
-        $crate::traceback!($variant, format!($format, $($arg,)*))
-    }};
 }

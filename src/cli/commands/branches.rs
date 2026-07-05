@@ -7,6 +7,7 @@ use couleur::{ContrastAlgorithm, Layer, RGBColor};
 use git2::Oid;
 use git2::Repository;
 use iocore::Path;
+use chrono_humanize::HumanTime;
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct BranchesOpt {}
@@ -42,11 +43,16 @@ impl ParserDispatcher<Error> for BranchesOpt {
             .map(|bi| bi.name.len())
             .max()
             .unwrap_or_default();
+        let max_datetime_length = branches
+            .iter()
+            .map(|bi| bi.datetime_string().len())
+            .max()
+            .unwrap_or_default();
         branches.sort_by_key(|info| info.datetime);
         branches.reverse();
 
         for br in branches {
-            println!("{line}", line = br.to_term_line(true, max_name_length)?);
+            println!("{line}", line = br.to_term_line(true, max_name_length, max_datetime_length)?);
         }
 
         Ok(())
@@ -63,14 +69,20 @@ impl NamedBranchInfo {
         self.commit_hash.to_string()
     }
     pub fn datetime_string(&self) -> String {
-        self.datetime.to_string()
+        let human = HumanTime::from(self.datetime.clone());
+        human.to_string()
     }
     pub fn name_string(&self) -> String {
         self.name.to_string()
     }
     pub fn get_hash_color_rgb(&self) -> Result<RGBColor> {
         let hash = self.hash_string();
-        let hash_color = hash.parse::<RGBColor>()?;
+        let mut hash_color = hash.parse::<RGBColor>()?;
+        let mut shift = 0;
+        while hash_color.is_dark() && shift < (hash.len() - 6) {
+            shift += 1;
+            hash_color = hash[shift..shift+6].parse::<RGBColor>()?;
+        }
         Ok(hash_color)
     }
     pub fn get_hash_color_ansi_sequence(
@@ -91,19 +103,19 @@ impl NamedBranchInfo {
         algo: ContrastAlgorithm,
     ) -> Result<String> {
         let hash_color = self.get_hash_color_rgb()?;
-        let name_color_fg = hash_color.to_ansi_sequence(Layer::BG);
-        let name_color_bg = algo.apply(hash_color).to_ansi_sequence(Layer::FG);
+        let name_color_fg = hash_color.to_ansi_sequence(Layer::FG);
+        let name_color_bg = algo.apply(hash_color).to_ansi_sequence(Layer::BG);
         let reset = if reset { "\x1b[0m" } else { "" };
         let ansi_sequence = format!("{reset}{name_color_fg}{name_color_bg}");
         Ok(ansi_sequence)
     }
-    pub fn to_term_line(&self, colorize: bool, name_width: usize) -> Result<String> {
+    pub fn to_term_line(&self, colorize: bool, name_width: usize, date_width: usize) -> Result<String> {
         let hash = self.hash_string();
         let date = self.datetime_string();
         let name = self.name_string();
 
         let hash = if colorize {
-            let ansi_color = self.get_hash_color_ansi_sequence(true, ContrastAlgorithm::Read)?;
+            let ansi_color = self.get_hash_color_ansi_sequence(true, ContrastAlgorithm::Web)?;
             format!("{ansi_color}{hash}\x1b[0m")
         } else {
             hash
@@ -115,8 +127,8 @@ impl NamedBranchInfo {
             name
         };
         let date = if colorize {
-            let ansi_color = self.get_hash_color_ansi_sequence(true, ContrastAlgorithm::Web)?;
-            format!("{ansi_color} {date} \x1b[0m")
+            let ansi_color = self.get_name_color_ansi_sequence(true, ContrastAlgorithm::Web)?;
+            format!("{ansi_color} {date: <date_width$} \x1b[0m")
         } else {
             date
         };
@@ -130,7 +142,7 @@ impl std::fmt::Display for NamedBranchInfo {
             f,
             "{line}",
             line = self
-                .to_term_line(false, self.name.len())
+                .to_term_line(false, self.name.len(), self.datetime_string().len())
                 .expect("branch to string")
         )
     }

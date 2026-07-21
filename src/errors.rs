@@ -116,8 +116,8 @@ impl From<git2::Error> for Error {
         Error::Git2Error(e.to_string())
     }
 }
-impl From<couleur::Error> for Error {
-    fn from(e: couleur::Error) -> Self {
+impl From<couleur_rs::Error> for Error {
+    fn from(e: couleur_rs::Error) -> Self {
         Error::CouleurError(e.to_string())
     }
 }

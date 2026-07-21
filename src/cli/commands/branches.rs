@@ -3,24 +3,26 @@ use clap::Parser;
 use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
 use chrono::{DateTime, Utc};
+use chrono_humanize::HumanTime;
 use couleur::{ContrastAlgorithm, Layer, RGBColor};
 use git2::Oid;
 use git2::Repository;
 use iocore::Path;
-use chrono_humanize::HumanTime;
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct BranchesOpt {}
+pub struct BranchesOpt {
+    #[arg()]
+    new_branch_name: Option<String>,
+
+    #[arg(short = 'D', long = "delete")]
+    delete_branch_name: Option<String>,
+}
 
 impl BranchesOpt {
     pub fn git_repo(&self) -> Result<Repository> {
         Ok(Repository::discover::<Path>(Path::cwd().into())?)
     }
-}
-
-impl ParserDispatcher<Error> for BranchesOpt {
-    fn dispatch(&self) -> Result<()> {
-        let git = self.git_repo()?;
+    pub fn list_branches() -> Result<Vec<NamedBranchInfo>> {
         let mut branches = git
             .branches(Some(git2::BranchType::Local))?
             .filter(|res| res.is_ok())
@@ -37,7 +39,13 @@ impl ParserDispatcher<Error> for BranchesOpt {
                 };
             })
             .collect::<Vec<NamedBranchInfo>>();
+        branches.sort_by_key(|info| info.datetime);
+        branches.reverse();
+        Ok(branches)
+    }
 
+    pub fn display_branch_list(&self) -> Result<()> {
+        let branches = self.list_branches()?;
         let max_name_length = branches
             .iter()
             .map(|bi| bi.name.len())
@@ -48,13 +56,26 @@ impl ParserDispatcher<Error> for BranchesOpt {
             .map(|bi| bi.datetime_string().len())
             .max()
             .unwrap_or_default();
-        branches.sort_by_key(|info| info.datetime);
-        branches.reverse();
 
         for br in branches {
-            println!("{line}", line = br.to_term_line(true, max_name_length, max_datetime_length)?);
+            println!(
+                "{line}",
+                line = br.to_term_line(true, max_name_length, max_datetime_length)?
+            );
         }
+    }
+}
 
+impl ParserDispatcher<Error> for BranchesOpt {
+    fn dispatch(&self) -> Result<()> {
+        let git = self.git_repo()?;
+        if self.new_branch_name.is_none() && self.delete_branch_name.is_none() {
+            self.display_branch_list()?;
+        } else if let Some(branch_name) = self.new_branch_name.clone() {
+            // create branch
+        } else if let Some(branch_name)  = self.delete_branch_name.clone() {
+            // delete branch
+        }
         Ok(())
     }
 }
@@ -81,7 +102,7 @@ impl NamedBranchInfo {
         let mut shift = 0;
         while hash_color.is_dark() && shift < (hash.len() - 6) {
             shift += 1;
-            hash_color = hash[shift..shift+6].parse::<RGBColor>()?;
+            hash_color = hash[shift..shift + 6].parse::<RGBColor>()?;
         }
         Ok(hash_color)
     }
@@ -109,7 +130,12 @@ impl NamedBranchInfo {
         let ansi_sequence = format!("{reset}{name_color_fg}{name_color_bg}");
         Ok(ansi_sequence)
     }
-    pub fn to_term_line(&self, colorize: bool, name_width: usize, date_width: usize) -> Result<String> {
+    pub fn to_term_line(
+        &self,
+        colorize: bool,
+        name_width: usize,
+        date_width: usize,
+    ) -> Result<String> {
         let hash = self.hash_string();
         let date = self.datetime_string();
         let name = self.name_string();

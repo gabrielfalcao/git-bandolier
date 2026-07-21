@@ -48,3 +48,13 @@ git br new-branch
 ```shell
 git br -D new-branch
 ```
+
+
+### `git remotes`
+
+lists remotes
+
+
+```shell
+git remotes
+```

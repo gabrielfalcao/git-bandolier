@@ -1,7 +1,7 @@
 [package]
 
 name = "git-bandolier"
-version = "0.0.2"
+version = "0.0.1"
 description = "arm yourself up with a set of useful git commands"
 readme = "README.md"
 homepage = "https://crates.io/crates/git-bandolier"

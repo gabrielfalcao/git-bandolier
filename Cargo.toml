@@ -31,12 +31,6 @@ doc = false
 test = false
 
 [[bin]]
-name = "git-branches"
-path = "src/bin/git-br.rs"
-doc = false
-test = false
-
-[[bin]]
 name = "git-list-branches"
 path = "src/bin/git-br.rs"
 doc = false
@@ -87,6 +81,7 @@ sanitation = "1.0.3"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 serde_yaml = "0.9.34"
+sha1 = "0.11.0"
 thiserror = "2.0.18"
 tokio = { version = "1.52.2", features = ["full"] }
 toml = "1.1.2"

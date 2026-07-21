@@ -272,7 +272,7 @@ impl NamedBranchInfo
         let hash = if colorize
         {
             let ansi_color =
-                self.get_hash_color_ansi_sequence(true, Contrast::Web)?;
+                self.get_hash_color_ansi_sequence(true, Contrast::Read)?;
             format!("{ansi_color}{hash}\x1b[0m")
         }
         else
@@ -282,7 +282,7 @@ impl NamedBranchInfo
         let name = if colorize
         {
             let ansi_color =
-                self.get_name_color_ansi_sequence(true, Contrast::Web)?;
+                self.get_name_color_ansi_sequence(true, Contrast::Read)?;
             format!("{ansi_color}{name: <name_width$}\x1b[0m")
         }
         else
@@ -292,7 +292,7 @@ impl NamedBranchInfo
         let date = if colorize
         {
             let ansi_color =
-                self.get_name_color_ansi_sequence(true, Contrast::Web)?;
+                self.get_name_color_ansi_sequence(true, Contrast::Read)?;
             format!("{ansi_color} {date: <date_width$} \x1b[0m")
         }
         else

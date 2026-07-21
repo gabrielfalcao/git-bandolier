@@ -11,6 +11,20 @@ autoexamples = false
 autobenches = false
 default-run = "git-bandolier"
 
+
+documentation = "https://docs.rs/git-bandolier"
+repository = "https://github.com/gabrielfalcao/git-bandolier"
+
+keywords = ["git", "ansi", "unix", "system", "git2"]
+authors = ["Gabriel DeMoura <gabrielteratos@gmail.com>"]
+categories = [
+    "command-line-interface",
+    "command-line-utilities",
+    "development-tools",
+]
+
+
+
 # categories = [] # https://crates.io/category_slugs
 
 [lib]

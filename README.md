@@ -21,6 +21,16 @@ cargo install git-bandolier
 ## Commands
 
 
+### `git path`
+
+prints the repository path
+
+
+```shell
+git path
+```
+
+
 ### `git br`
 
 lists, creates and deletes local branches

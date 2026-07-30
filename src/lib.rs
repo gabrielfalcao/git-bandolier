@@ -1,3 +1,4 @@
+#[allow(unused)]
 pub mod errors;
 pub use errors::{Error, Exit, Result};
 pub mod dispatch;
@@ -11,9 +12,9 @@ pub use models::Context;
 
 pub mod cli;
 pub use cli::{
-    BranchesOpt, CommitDatedCommand, CommitDatedDirOpt, CommitDatedFileOpt,
-    CommitDatedOpt, CommitDatedSharedOpt, PathDirOpt, PathFileOpt, PathOpt,
-    PathSharedOpt, QuickCommitCommand, QuickCommitListOpt, QuickCommitOpt,
-    RemotesOpt, SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt,
-    SwitchSharedOpt,
+    main, BranchesOpt, Cli, Command, CommitDatedCommand, CommitDatedDirOpt,
+    CommitDatedFileOpt, CommitDatedOpt, CommitDatedSharedOpt,
+    GitRepoAutoDiscover, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt,
+    QuickCommitCommand, QuickCommitListOpt, QuickCommitOpt, RemotesOpt,
+    SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
 };

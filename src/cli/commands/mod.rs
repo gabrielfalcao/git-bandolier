@@ -17,3 +17,6 @@ pub use quick_commit::{QuickCommitCommand, QuickCommitListOpt, QuickCommitOpt};
 
 pub(crate) mod remotes;
 pub use remotes::RemotesOpt;
+
+pub(crate) mod mangen;
+pub use mangen::MangenOpt;

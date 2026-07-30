@@ -26,3 +26,6 @@ pub use remotes::RemotesOpt;
 // TODO: fix errors and integrate `ignore` module (less than 15 errors remaining)
 // pub(crate) mod ignore;
 // pub use ignore::{GitIgnoreCommand, IgnoreOpt};
+
+pub(crate) mod mangen;
+pub use mangen::MangenOpt;

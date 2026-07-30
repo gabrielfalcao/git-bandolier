@@ -1,4 +1,4 @@
-#[allow(unused)]
+#![allow(unused)]
 pub mod errors;
 pub use errors::{Error, Exit, Result};
 pub mod dispatch;

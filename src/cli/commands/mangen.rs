@@ -1,9 +1,13 @@
+use std::io::{BufRead, Read, Seek, Write};
+
 use chrono::{DateTime, Utc};
 use chrono_humanize::HumanTime;
-use clap::Parser;
+use clap::{Command, CommandFactory, Parser};
+use clap_mangen::Man;
 use couleur_rs::{Color, Contrast, Layer};
 use git2::{ErrorCode, Oid, Repository};
 use iocore::Path;
+use slugify_filenames::slugify_string;
 
 use crate::dispatch::ParserDispatcher;
 use crate::{Error, Result};
@@ -25,7 +29,14 @@ pub(crate) fn valid_directory(val: &str)
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct MangenOpt
 {
-    #[arg(required = True, value_parser, help="path to directory where manfiles will be written to. Should point to either an unexisting path or the path to an existing directory")]
+    #[arg(
+        required = true,
+        default_value = "./manpages",
+        value_parser,
+        help = "path to directory where manfiles will be written to. Should \
+                point to either an unexisting path or the path to an existing \
+                directory"
+    )]
     output_path: Path,
 
     #[arg(short, long, help = "overwrites any existing files")]
@@ -51,13 +62,37 @@ impl MangenOpt
         date_string
     }
 
-    pub fn generate_man<T: Command, O: Write>(
-        &self,
-        cmd: T,
-        &mut out: O,
-    ) -> Result<()>
+    pub fn get_man(&self, cmd: Command) -> Man
     {
-        Ok(Man::new(cmd).date(self.get_current_date_for_man()).render(out)?)
+        let man = Man::new(cmd).date(self.get_current_date_for_man());
+        man
+    }
+
+    // pub fn generate_man<O: Write>(
+    //     &self,
+    //     cmd: Command,
+    //     out: &mut O,
+    // ) -> Result<Man>
+    // {
+    //     let man = Man::new(cmd).date(self.get_current_date_for_man());
+    //     man.render(out)?;
+    //     Ok(man)
+    // }
+    pub fn get_cmd_name(&self, cmd: &Command) -> String
+    {
+        let name = cmd
+            .get_bin_name()
+            .map(String::from)
+            .or_else(|| cmd.get_display_name().map(String::from))
+            .unwrap_or_else(|| cmd.get_name().to_string());
+        name
+    }
+
+    pub fn get_cmd_filename(&self, cmd: &Command) -> Result<String>
+    {
+        let name = self.get_cmd_name(cmd);
+        let slug = slugify_string(name.as_str(), true)?;
+        Ok(slug)
     }
 }
 
@@ -65,8 +100,36 @@ impl ParserDispatcher<Error> for MangenOpt
 {
     fn dispatch(&self) -> Result<()>
     {
-        let cmd = crate::cli::main::Command::new();
-        generate_man(cmd)?;
+        let mut cmd = crate::cli::main::Cli::command_for_update();
+        // cmd.set_bin_name("git");
+
+        let output_dir = self.output_path.clone();
+        for mut subcmd in cmd.get_subcommands_mut()
+        {
+            let suffix = self.get_cmd_name(&subcmd);
+            if suffix == self.get_cmd_name(&Self::command_for_update()) {
+                continue
+            }
+            let filename = format!("git-{suffix}");
+            let mut subcmd = subcmd.clone().name(filename.to_string());
+            subcmd.set_bin_name(filename.as_str());
+            let man = self.get_man(subcmd.clone());
+            eprintln!(
+                "\x1b[1;38;2;240;79;120mname: \
+                 \x1b[1;38;2;48;225;185m{filename}\x1b[0m"
+            );
+            // let filename = self.get_cmd_filename()?;
+            let mut buf = Vec::<u8>::new();
+            man.render(&mut buf)?;
+
+            let manpage_file_path = output_dir
+                .join("man1")
+                .join(filename.as_str())
+                .with_extension(".1");
+            manpage_file_path.write(&buf)?;
+
+            eprintln!("wrote manual of '{filename}' to '{manpage_file_path}'");
+        }
         Ok(())
     }
 }

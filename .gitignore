@@ -6,3 +6,4 @@ __test_files__
 /dist
 /build
 *.json
+man/

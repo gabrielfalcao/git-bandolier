@@ -12,9 +12,9 @@ pub use models::Context;
 
 pub mod cli;
 pub use cli::{
-    main, BranchesOpt, Cli, Command, CommitDatedCommand, CommitDatedDirOpt,
+    BranchesOpt, Cli, Command, CommitDatedCommand, CommitDatedDirOpt,
     CommitDatedFileOpt, CommitDatedOpt, CommitDatedSharedOpt,
-    GitRepoAutoDiscover, PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt,
-    QuickCommitCommand, QuickCommitListOpt, QuickCommitOpt, RemotesOpt,
-    SwitchCommand, SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt,
+    GitRepoAutoDiscover, PathOpt, PathSharedOpt, QuickCommitCommand,
+    QuickCommitListOpt, QuickCommitOpt, RemotesOpt, SwitchCommand,
+    SwitchDirOpt, SwitchFileOpt, SwitchOpt, SwitchSharedOpt, main,
 };

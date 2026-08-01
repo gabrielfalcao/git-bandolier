@@ -13,7 +13,7 @@ pub use commit_dated::{
 };
 
 pub mod path;
-pub use path::{PathDirOpt, PathFileOpt, PathOpt, PathSharedOpt};
+pub use path::{PathOpt, PathSharedOpt};
 
 pub mod quick_commit;
 pub use quick_commit::{

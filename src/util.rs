@@ -5,23 +5,29 @@ use sha1::{Digest, Sha1};
 
 use crate::Result;
 
-pub fn discover_git_repo(starting_point: &Path) -> Result<(Repository, Path)> {
+pub fn discover_git_repo(starting_point: &Path) -> Result<(Repository, Path)>
+{
     let home = Path::new("~/").canonicalize()?.to_string();
-    let path = Repository::discover_path(starting_point, [iocore::ROOT_PATH_STR]).map(|pb| Path::from(pb))?;
+    let path =
+        Repository::discover_path(starting_point, [iocore::ROOT_PATH_STR])
+            .map(|pb| Path::from(pb))?;
     let repo = Repository::open::<Path>(path.clone())?;
     Ok((repo, path))
 }
 
-pub fn sha1_hash_hex(data: &[u8]) -> String {
+pub fn sha1_hash_hex(data: &[u8]) -> String
+{
     let result = Sha1::digest(data);
     hex::encode(result)
 }
 
-pub fn get_string_color_rgb(string: &str) -> Result<Color> {
+pub fn get_string_color_rgb(string: &str) -> Result<Color>
+{
     let hash = sha1_hash_hex(string.as_bytes());
     let mut hash_color = hash.parse::<Color>()?;
     let mut shift = 0;
-    while hash_color.is_dark() && shift < (hash.len() - 6) {
+    while hash_color.is_dark() && shift < (hash.len() - 6)
+    {
         shift += 1;
         hash_color = hash[shift..shift + 6].parse::<Color>()?;
     }

@@ -1,5 +1,8 @@
-use git_bandolier::{Exit, cli::commands::BranchesOpt, dispatch::ParserDispatcher};
+use git_bandolier::Exit;
+use git_bandolier::cli::commands::BranchesOpt;
+use git_bandolier::dispatch::ParserDispatcher;
 
-fn main() -> Exit {
+fn main() -> Exit
+{
     BranchesOpt::main()
 }

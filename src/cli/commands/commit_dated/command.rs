@@ -1,8 +1,11 @@
 use clap::{Parser, Subcommand};
 
-use crate::cli::commands::commit_dated::{CommitDatedDirOpt, CommitDatedFileOpt};
-use crate::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
-use crate::{Error, Result};
+use crate::{
+    Error,
+    Result,
+    cli::commands::commit_dated::{CommitDatedDirOpt, CommitDatedFileOpt},
+    dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher},
+};
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum CommitDatedCommand {

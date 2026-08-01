@@ -1,6 +1,4 @@
-use git_bandolier::cli::commands::RemotesOpt;
-use git_bandolier::dispatch::ParserDispatcher;
-use git_bandolier::Exit;
+use git_bandolier::{Exit, cli::commands::RemotesOpt, dispatch::ParserDispatcher};
 
 fn main() -> Exit {
     RemotesOpt::main()

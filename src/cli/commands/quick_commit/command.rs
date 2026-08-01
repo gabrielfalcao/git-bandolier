@@ -1,8 +1,11 @@
 use clap::{Parser, Subcommand};
 
-use crate::cli::commands::quick_commit::QuickCommitListOpt;
-use crate::dispatch::{ParserDispatcher, SubcommandDispatcher};
-use crate::{Error, Result};
+use crate::{
+    Error,
+    Result,
+    cli::commands::quick_commit::QuickCommitListOpt,
+    dispatch::{ParserDispatcher, SubcommandDispatcher},
+};
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum QuickCommitCommand {

@@ -1,9 +1,7 @@
 use clap::Args;
 use iocore::Path;
 
-use crate::cli::commands::switch::shared::SwitchSharedOpt;
-use crate::dispatch::ArgsDispatcher;
-use crate::{Error, Result};
+use crate::{Error, Result, cli::commands::switch::shared::SwitchSharedOpt, dispatch::ArgsDispatcher};
 
 #[derive(Args, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SwitchDirOpt {

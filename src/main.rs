@@ -1,8 +1,6 @@
 use clap::Parser;
-use git_bandolier::cli::main::Cli;
-use git_bandolier::{Exit, ParserDispatcher};
+use git_bandolier::{Exit, ParserDispatcher, cli::main::Cli};
 
-fn main() -> Exit
-{
+fn main() -> Exit {
     Cli::main()
 }

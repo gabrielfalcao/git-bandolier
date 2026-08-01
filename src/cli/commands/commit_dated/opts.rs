@@ -1,9 +1,12 @@
 use clap::{Args, Parser};
 use iocore::Path;
 
-use crate::cli::commands::commit_dated::shared::CommitDatedSharedOpt;
-use crate::dispatch::{ArgsDispatcher, ParserDispatcher};
-use crate::{Error, Result};
+use crate::{
+    Error,
+    Result,
+    cli::commands::commit_dated::shared::CommitDatedSharedOpt,
+    dispatch::{ArgsDispatcher, ParserDispatcher},
+};
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct CommitDatedDirOpt {

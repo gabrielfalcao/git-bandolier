@@ -1,10 +1,8 @@
 use clap::Parser;
 
-use git2::Repository;
-use git2::Status;
+use git2::{Repository, Status};
 
-use crate::dispatch::ParserDispatcher;
-use crate::{Error, Result};
+use crate::{Error, Result, dispatch::ParserDispatcher};
 use iocore::Path;
 use sanitation::SString;
 

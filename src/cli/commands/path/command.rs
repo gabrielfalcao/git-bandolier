@@ -1,14 +1,11 @@
 use clap::Parser;
 use iocore::Path;
 
-use crate::dispatch::ParserDispatcher;
-use crate::{discover_git_repo, Error, Result};
+use crate::{Error, Result, discover_git_repo, dispatch::ParserDispatcher};
 
 #[derive(Parser, Debug, Clone)]
 pub struct PathOpt {
-    #[arg(
-        help = "path to be used as starting point to discover the git repo path, defaults to the current working directory"
-    )]
+    #[arg(help = "path to be used as starting point to discover the git repo path, defaults to the current working directory")]
     starting_point: Option<Path>,
 }
 impl PathOpt {

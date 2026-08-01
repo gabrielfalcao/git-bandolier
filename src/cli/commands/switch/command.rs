@@ -1,8 +1,11 @@
 use clap::{Parser, Subcommand};
 
-use crate::cli::commands::switch::{SwitchDirOpt, SwitchFileOpt};
-use crate::dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher};
-use crate::{Error, Result};
+use crate::{
+    Error,
+    Result,
+    cli::commands::switch::{SwitchDirOpt, SwitchFileOpt},
+    dispatch::{ArgsDispatcher, ParserDispatcher, SubcommandDispatcher},
+};
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum SwitchCommand {

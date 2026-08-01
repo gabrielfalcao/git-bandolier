@@ -9,8 +9,6 @@ pub struct Context {
 
 impl Context {
     pub fn day<T: Into<DateTime<Utc>>>(created: T) -> Context {
-        Context {
-            created: created.into(),
-        }
+        Context { created: created.into() }
     }
 }

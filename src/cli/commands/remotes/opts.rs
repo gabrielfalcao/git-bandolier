@@ -5,7 +5,7 @@ use git2::Repository;
 use iocore::Path;
 
 use crate::dispatch::ParserDispatcher;
-use crate::{get_string_color_rgb, Error, Result};
+use crate::{Error, Result, get_string_color_rgb};
 
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub struct RemotesOpt {}
@@ -37,7 +37,8 @@ impl RemotesOpt
         {
             ""
         };
-        let ansi_sequence = format!("{reset}{name_color_fg}{name_color_bg}{name}{reset}");
+        let ansi_sequence =
+            format!("{reset}{name_color_fg}{name_color_bg}{name}{reset}");
         Ok(ansi_sequence)
     }
 
@@ -61,7 +62,8 @@ impl RemotesOpt
         {
             ""
         };
-        let ansi_sequence = format!("{reset}{name_color_fg}{name_color_bg}{url}{reset}");
+        let ansi_sequence =
+            format!("{reset}{name_color_fg}{name_color_bg}{url}{reset}");
         Ok(ansi_sequence)
     }
 }

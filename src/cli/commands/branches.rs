@@ -32,7 +32,7 @@ impl BranchesOpt
     }
 
     pub fn list_branches(git: &git2::Repository)
-        -> Result<Vec<NamedBranchInfo>>
+    -> Result<Vec<NamedBranchInfo>>
     {
         let mut branches = git
             .branches(Some(git2::BranchType::Local))?

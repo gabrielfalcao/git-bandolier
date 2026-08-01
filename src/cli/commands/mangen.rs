@@ -9,19 +9,26 @@ use git2::{ErrorCode, Oid, Repository};
 use iocore::Path;
 use slugify_filenames::slugify_string;
 
-use crate::{Error, Result, dispatch::ParserDispatcher};
+use crate::dispatch::ParserDispatcher;
+use crate::{Error, Result};
 
-pub(crate) fn valid_directory(val: &str) -> ::std::result::Result<Path, String> {
+pub(crate) fn valid_directory(val: &str)
+-> ::std::result::Result<Path, String>
+{
     let path = Path::new(val);
 
-    if path.is_dir() || !path.exists() {
+    if path.is_dir() || !path.exists()
+    {
         Ok(path)
-    } else {
+    }
+    else
+    {
         Err(format!("output path exists but is not not a directory"))
     }
 }
 #[derive(Parser, Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-pub struct MangenOpt {
+pub struct MangenOpt
+{
     #[arg(
         required = true,
         default_value = "./manpages",
@@ -32,7 +39,11 @@ pub struct MangenOpt {
     )]
     output_path: Path,
 
-    #[arg(short, long, help = "overwrites any existing files")]
+    #[arg(
+        short,
+        long,
+        help = "overwrites any existing files"
+    )]
     force: bool,
 
     #[arg(
@@ -45,15 +56,18 @@ pub struct MangenOpt {
     dry_run: bool,
 }
 
-impl MangenOpt {
-    pub fn get_current_date_for_man(&self) -> String {
+impl MangenOpt
+{
+    pub fn get_current_date_for_man(&self) -> String
+    {
         let now = Utc::now();
         let delayed_fmt = now.format("%Y-%m-%d");
         let date_string = format!("{delayed_fmt}");
         date_string
     }
 
-    pub fn get_man(&self, cmd: Command) -> Man {
+    pub fn get_man(&self, cmd: Command) -> Man
+    {
         let man = Man::new(cmd).date(self.get_current_date_for_man());
         man
     }
@@ -68,7 +82,8 @@ impl MangenOpt {
     //     man.render(out)?;
     //     Ok(man)
     // }
-    pub fn get_cmd_name(&self, cmd: &Command) -> String {
+    pub fn get_cmd_name(&self, cmd: &Command) -> String
+    {
         let name = cmd
             .get_bin_name()
             .map(String::from)
@@ -77,22 +92,27 @@ impl MangenOpt {
         name
     }
 
-    pub fn get_cmd_filename(&self, cmd: &Command) -> Result<String> {
+    pub fn get_cmd_filename(&self, cmd: &Command) -> Result<String>
+    {
         let name = self.get_cmd_name(cmd);
         let slug = slugify_string(name.as_str(), true)?;
         Ok(slug)
     }
 }
 
-impl ParserDispatcher<Error> for MangenOpt {
-    fn dispatch(&self) -> Result<()> {
+impl ParserDispatcher<Error> for MangenOpt
+{
+    fn dispatch(&self) -> Result<()>
+    {
         let mut cmd = crate::cli::main::Cli::command_for_update();
         // cmd.set_bin_name("git");
 
         let output_dir = self.output_path.clone();
-        for mut subcmd in cmd.get_subcommands_mut() {
+        for mut subcmd in cmd.get_subcommands_mut()
+        {
             let suffix = self.get_cmd_name(&subcmd);
-            if suffix == self.get_cmd_name(&Self::command_for_update()) {
+            if suffix == self.get_cmd_name(&Self::command_for_update())
+            {
                 continue;
             }
             let filename = format!("git-{suffix}");
@@ -107,7 +127,10 @@ impl ParserDispatcher<Error> for MangenOpt {
             let mut buf = Vec::<u8>::new();
             man.render(&mut buf)?;
 
-            let manpage_file_path = output_dir.join("man1").join(filename.as_str()).with_extension(".1");
+            let manpage_file_path = output_dir
+                .join("man1")
+                .join(filename.as_str())
+                .with_extension(".1");
             manpage_file_path.write(&buf)?;
 
             eprintln!("wrote manual of '{filename}' to '{manpage_file_path}'");

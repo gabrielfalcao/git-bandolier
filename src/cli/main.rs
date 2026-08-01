@@ -9,29 +9,34 @@ use crate::cli::commands::{
     QuickCommitOpt,
     RemotesOpt,
 };
-use crate::{
-    Error,
-    Exit,
-    Result,
-    dispatch::{ParserDispatcher, SubcommandDispatcher},
-};
+use crate::dispatch::{ParserDispatcher, SubcommandDispatcher};
+use crate::{Error, Exit, Result};
 
 #[derive(Parser, Debug, Clone)]
-#[command(author, version, about, long_about = "git_bandolier command-line")]
-pub struct Cli {
+#[command(
+    author,
+    version,
+    about,
+    long_about = "git_bandolier command-line"
+)]
+pub struct Cli
+{
     #[command(subcommand)]
     command: Command,
 }
 
-impl ParserDispatcher<Error> for Cli {
-    fn dispatch(&self) -> Result<()> {
+impl ParserDispatcher<Error> for Cli
+{
+    fn dispatch(&self) -> Result<()>
+    {
         self.command.dispatch()?;
         Ok(())
     }
 }
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum Command {
+pub enum Command
+{
     Br(BranchesOpt),
     Branches(BranchesOpt),
     CommitDated(CommitDatedOpt),
@@ -43,9 +48,12 @@ pub enum Command {
     QuickCommit(QuickCommitOpt),
     Remotes(RemotesOpt),
 }
-impl SubcommandDispatcher<Error> for Command {
-    fn dispatch(&self) -> Result<()> {
-        match self {
+impl SubcommandDispatcher<Error> for Command
+{
+    fn dispatch(&self) -> Result<()>
+    {
+        match self
+        {
             Command::Br(op) => op.dispatch()?,
             Command::Branches(op) => op.dispatch()?,
             Command::CommitDated(op) => op.dispatch()?,

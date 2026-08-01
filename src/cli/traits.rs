@@ -3,16 +3,18 @@ use git2::{Repository, Status, StatusEntry, StatusOptions};
 use iocore::Path;
 use sanitation::SString;
 
-use crate::{Error, Result};
+use crate::{discover_git_repo, Error, Result};
 
 pub trait GitRepoAutoDiscover: FromArgMatches
 {
     fn starting_point(&self) -> Path;
     fn git_repo(&self) -> Result<Repository>
     {
-        Ok(Repository::discover::<Path>(
-            self.starting_point().into(),
-        )?)
+        Ok(self.git_repo_and_path().map(|(repo, _)|repo)?)
+    }
+    fn git_repo_and_path(&self) -> Result<(Repository, Path)>
+    {
+        Ok(discover_git_repo(&self.starting_point())?)
     }
     fn repo_path_from_repo(&self, repo: &Repository) -> Result<Path>
     {

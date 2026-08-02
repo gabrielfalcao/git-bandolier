@@ -48,6 +48,14 @@ pub struct StatusOpt {
     /// includes the status description before each file, like `git status` does
     #[arg(short = 'D', long = "desc")]
     description: Option<bool>,
+
+    /// displays files with status change which descend from the root
+    /// path of the git repository, this changes the default behavior
+    /// of limiting show files to descendents of the current
+    /// directory.
+    #[arg(short = 'r', long = "root")]
+    root: Option<bool>,
+
 }
 
 impl StatusOpt

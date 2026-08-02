@@ -7,3 +7,8 @@ __test_files__
 /build
 *.json
 man/
+
+
+*#*
+.#*
+.*#*

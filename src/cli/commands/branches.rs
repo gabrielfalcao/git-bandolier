@@ -18,6 +18,15 @@ pub struct BranchesOpt
     force: bool,
 
     #[arg(
+        short,
+        long,
+        exclusive = true,
+        long_help = "prints the current branch name to stdout and exists \
+                     without listing branches or doing anything else"
+    )]
+    print_current: bool,
+
+    #[arg(
         short = 'D',
         long = "delete"
     )]
@@ -32,7 +41,7 @@ impl BranchesOpt
     }
 
     pub fn list_branches(git: &git2::Repository)
-    -> Result<Vec<NamedBranchInfo>>
+        -> Result<Vec<NamedBranchInfo>>
     {
         let mut branches = git
             .branches(Some(git2::BranchType::Local))?
@@ -95,7 +104,29 @@ impl ParserDispatcher<Error> for BranchesOpt
     fn dispatch(&self) -> Result<()>
     {
         let git = self.git_repo()?;
-        if self.new_branch_name.is_none() && self.delete_branch_name.is_none()
+        if self.print_current
+        {
+            if git.head_detached()?
+            {
+                eprintln!("HEAD is detached; not on any branch.");
+                std::process::exit(1);
+            }
+            else
+            {
+                let head = git.head()?;
+                if let Some(branch_name) = head.shorthand()
+                {
+                    println!("{branch_name}");
+                }
+                else
+                {
+                    eprintln!("failed to retrieve current branch name");
+                    std::process::exit(1);
+                }
+            }
+        }
+        else if self.new_branch_name.is_none()
+            && self.delete_branch_name.is_none()
         {
             Self::display_branch_list(&git)?;
         }
